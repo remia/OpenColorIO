@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Op.h"
 #include "ops/OpArray.h"
+#include "PrivateTypes.h"
 
 OCIO_NAMESPACE_ENTER
 {
@@ -120,6 +121,14 @@ public:
 
     void setOutputBitDepth(BitDepth out) override;
 
+    void setInputMinimum(const float *rs);
+
+    const FloatVec3 getInputMinimum() const;
+
+    void setInputMaximum(const float * rs);
+
+    const FloatVec3 getInputMaximum() const;
+
     Lut3DOpDataRcPtr clone() const;
 
     bool isInverse(ConstLut3DOpDataRcPtr & lut) const;
@@ -174,6 +183,9 @@ private:
 
     TransformDirection  m_direction;
     LutInversionQuality m_invQuality;
+
+    FloatVec3  m_fromMin;
+    FloatVec3  m_fromMax;
 };
 
 // Make a forward Lut3DOpData that approximates the exact inverse Lut3DOpData

@@ -105,7 +105,13 @@ OCIO_NAMESPACE_ENTER
     typedef OCIO_SHARED_PTR<const Baker> ConstBakerRcPtr;
     //!cpp:type::
     typedef OCIO_SHARED_PTR<Baker> BakerRcPtr;
-    
+
+    class OCIOEXPORT FileConverter;
+    //!cpp:type::
+    typedef OCIO_SHARED_PTR<const FileConverter> ConstFileConverterRcPtr;
+    //!cpp:type::
+    typedef OCIO_SHARED_PTR<FileConverter> FileConverterRcPtr;
+
     class OCIOEXPORT ImageDesc;
     class OCIOEXPORT Exception;
     

@@ -54,7 +54,8 @@ OCIO_NAMESPACE_ENTER
     const int FORMAT_CAPABILITY_READ = 1;
     const int FORMAT_CAPABILITY_WRITE = 2;
     const int FORMAT_CAPABILITY_ALL = (FORMAT_CAPABILITY_READ | FORMAT_CAPABILITY_WRITE);
-    
+    const int FORMAT_CAPABILITY_CONVERT = 4;
+
     struct FormatInfo
     {
         std::string name;       // name must be globally unique
@@ -85,7 +86,11 @@ OCIO_NAMESPACE_ENTER
         virtual void Write(const Baker & baker,
                            const std::string & formatName,
                            std::ostream & ostream) const;
-        
+
+        virtual void Write(const OpRcPtrVec & ops,
+                           const std::string & formatName,
+                           std::ostream & ostream) const;
+
         virtual void BuildFileOps(OpRcPtrVec & ops,
                                   const Config & config,
                                   const ConstContextRcPtr & context,

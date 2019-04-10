@@ -66,6 +66,7 @@ set(SOURCES
 	CPUProcessor.cpp
 	Display.cpp
 	Exception.cpp
+	FileConverter.cpp
 	fileformats/cdl/CDLParser.cpp
 	fileformats/cdl/CDLReaderHelper.cpp
 	fileformats/ctf/CTFReaderHelper.cpp

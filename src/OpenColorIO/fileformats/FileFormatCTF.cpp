@@ -137,7 +137,12 @@ public:
             
     CachedFileRcPtr Read(std::istream & istream,
                          const std::string & fileName) const override;
-            
+
+    void Write(const OpRcPtrVec & ops,
+               const std::string & formatName,
+               std::ostream & ostream) const override;
+
+
     void BuildFileOps(OpRcPtrVec & ops,
                       const Config & config,
                       const ConstContextRcPtr & context,
@@ -145,19 +150,19 @@ public:
                       const FileTransform & fileTransform,
                       TransformDirection dir) const override;
 };
-        
+
 void LocalFileFormat::GetFormatInfo(FormatInfoVec & formatInfoVec) const
 {
     FormatInfo info;
     info.name = "Academy/ASC Common LUT Format";
     info.extension = "clf";
-    info.capabilities = FORMAT_CAPABILITY_READ;
+    info.capabilities = FORMAT_CAPABILITY_READ | FORMAT_CAPABILITY_CONVERT;
     formatInfoVec.push_back(info);
 
     FormatInfo info2;
     info2.name = "Color Transform Format";
     info2.extension = "ctf";
-    info2.capabilities = FORMAT_CAPABILITY_READ;
+    info2.capabilities = FORMAT_CAPABILITY_READ | FORMAT_CAPABILITY_CONVERT;
     formatInfoVec.push_back(info2);
 }
 
@@ -961,6 +966,29 @@ CachedFileRcPtr LocalFileFormat::Read(
     return cachedFile;
 }
 
+void LocalFileFormat::Write(const OpRcPtrVec & ops,
+                            const std::string & formatName,
+                            std::ostream & ostream) const
+{
+    std::cerr << "Building CLF...\n";
+
+    for (ConstOpRcPtr op : ops) {
+        std::cerr << "\t" << op->getInfo() << "\n";
+        std::cerr << "\t" << op->data()->getName();
+
+        if (op->data()->getType() == OpData::Lut1DType) {
+            ConstLut1DOpDataRcPtr d = DynamicPtrCast<const Lut1DOpData>(op->data());
+            std::cerr << "\tLUT1D Size : " << d->getArray().getLength() << "\n";
+            std::cerr << "\tLUT1D Range : " << d->getInputMinimum()[0] << " " << d->getInputMaximum()[0] << "\n";
+        }
+        else if (op->data()->getType() == OpData::Lut3DType) {
+            ConstLut3DOpDataRcPtr d = DynamicPtrCast<const Lut3DOpData>(op->data());
+            std::cerr << "\tLUT3D Size : " << d->getGridSize() << "\n";
+            std::cerr << "\tLUT3D Range : " << d->getInputMinimum()[0] << " " << d->getInputMaximum()[0] << "\n";
+        }
+    }
+}
+
 // Helper called by LocalFileFormat::BuildFileOps
 void BuildOp(OpRcPtrVec & ops,
              const Config& config,
@@ -1032,7 +1060,6 @@ void BuildOp(OpRcPtrVec & ops,
     {
         CreateOpVecFromOpData(ops, opData, dir);
     }
-
 }
 
 void
