@@ -215,6 +215,8 @@ Lut1DOpData::Lut1DOpData(unsigned long dimension)
     , m_direction(TRANSFORM_DIR_FORWARD)
     , m_invQuality(LUT_INVERSION_FAST)
     , m_fileBitDepth(BIT_DEPTH_UNKNOWN)
+    , m_fromMin { 0.0f, 0.0f, 0.0f }
+    , m_fromMax { 1.0f, 1.0f, 1.0f }
 {
 }
 
@@ -227,6 +229,8 @@ Lut1DOpData::Lut1DOpData(unsigned long dimension, TransformDirection dir)
     , m_direction(dir)
     , m_invQuality(LUT_INVERSION_FAST)
     , m_fileBitDepth(BIT_DEPTH_UNKNOWN)
+    , m_fromMin { 0.0f, 0.0f, 0.0f }
+    , m_fromMax { 1.0f, 1.0f, 1.0f }
 {
 }
 
@@ -241,6 +245,8 @@ Lut1DOpData::Lut1DOpData(BitDepth inBitDepth,
     , m_direction(TRANSFORM_DIR_FORWARD)
     , m_invQuality(LUT_INVERSION_FAST)
     , m_fileBitDepth(outBitDepth)
+    , m_fromMin { 0.0f, 0.0f, 0.0f }
+    , m_fromMax { 1.0f, 1.0f, 1.0f }
 {
 }
 
@@ -257,6 +263,8 @@ Lut1DOpData::Lut1DOpData(BitDepth inBitDepth, BitDepth outBitDepth,
     , m_direction(TRANSFORM_DIR_FORWARD)
     , m_invQuality(LUT_INVERSION_FAST)
     , m_fileBitDepth(outBitDepth)
+    , m_fromMin { 0.0f, 0.0f, 0.0f }
+    , m_fromMax { 1.0f, 1.0f, 1.0f }
 {
 }
 
@@ -274,6 +282,8 @@ Lut1DOpData::Lut1DOpData(BitDepth inBitDepth, BitDepth outBitDepth,
     , m_direction(TRANSFORM_DIR_FORWARD)
     , m_invQuality(LUT_INVERSION_FAST)
     , m_fileBitDepth(outBitDepth)
+    , m_fromMin { 0.0f, 0.0f, 0.0f }
+    , m_fromMax { 1.0f, 1.0f, 1.0f }
 {
 }
 
@@ -401,6 +411,26 @@ void Lut1DOpData::setInputBitDepth(BitDepth in)
     }
     // Call parent to set the input bit depth.
     OpData::setInputBitDepth(in);
+}
+
+void Lut1DOpData::setInputMinimum(const float *rs)
+{
+    std::copy_n(rs, 3, std::begin(m_fromMin));
+}
+
+const FloatVec3 Lut1DOpData::getInputMinimum() const
+{
+    return m_fromMin;
+}
+
+void Lut1DOpData::setInputMaximum(const float *rs)
+{
+    std::copy_n(rs, 3, std::begin(m_fromMax));
+}
+
+const FloatVec3 Lut1DOpData::getInputMaximum() const
+{
+    return m_fromMax;
 }
 
 void Lut1DOpData::setInputHalfDomain(bool isHalfDomain)

@@ -6,6 +6,7 @@ set(SOURCES
 	ColorSpaceSet.cpp
 	Config.cpp
 	Context.cpp
+	FileConverter.cpp
 	CPUProcessor.cpp
 	Display.cpp
 	Exception.cpp

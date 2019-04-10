@@ -308,6 +308,8 @@ Lut3DOpData::Lut3DOpData(unsigned long gridSize)
     , m_array(gridSize, getOutputBitDepth())
     , m_direction(TRANSFORM_DIR_FORWARD)
     , m_invQuality(LUT_INVERSION_FAST)
+    , m_fromMin { 0.0f, 0.0f, 0.0f }
+    , m_fromMax { 1.0f, 1.0f, 1.0f }
 {
 }
 
@@ -317,6 +319,8 @@ Lut3DOpData::Lut3DOpData(long gridSize, TransformDirection dir)
     , m_array(gridSize, getOutputBitDepth())
     , m_direction(dir)
     , m_invQuality(LUT_INVERSION_FAST)
+    , m_fromMin { 0.0f, 0.0f, 0.0f }
+    , m_fromMax { 1.0f, 1.0f, 1.0f }
 {
 }
 
@@ -331,6 +335,8 @@ Lut3DOpData::Lut3DOpData(BitDepth inBitDepth,
     , m_array(gridSize, getOutputBitDepth())
     , m_direction(TRANSFORM_DIR_FORWARD)
     , m_invQuality(LUT_INVERSION_FAST)
+    , m_fromMin { 0.0f, 0.0f, 0.0f }
+    , m_fromMax { 1.0f, 1.0f, 1.0f }
 {
 }
 
@@ -486,6 +492,26 @@ void Lut3DOpData::setInputBitDepth(BitDepth in)
     }
     // Call parent to set the input bit depth.
     OpData::setInputBitDepth(in);
+}
+
+void Lut3DOpData::setInputMinimum(const float *rs)
+{
+    std::copy_n(rs, 3, std::begin(m_fromMin));
+}
+
+const FloatVec3 Lut3DOpData::getInputMinimum() const
+{
+    return m_fromMin;
+}
+
+void Lut3DOpData::setInputMaximum(const float *rs)
+{
+    std::copy_n(rs, 3, std::begin(m_fromMax));
+}
+
+const FloatVec3 Lut3DOpData::getInputMaximum() const
+{
+    return m_fromMax;
 }
 
 OpDataRcPtr Lut3DOpData::getIdentityReplacement() const

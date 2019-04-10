@@ -423,7 +423,16 @@ OCIO_NAMESPACE_ENTER
         os << "Format " << formatName << " does not support writing.";
         throw Exception(os.str().c_str());
     }
-    
+
+    void FileFormat::Write(const OpRcPtrVec & ops,
+                           const std::string & formatName,
+                           std::ostream & ostream) const
+    {
+        std::ostringstream os;
+        os << "Format " << formatName << " does not support converting.";
+        throw Exception(os.str().c_str());
+    }
+
     namespace
     {
     

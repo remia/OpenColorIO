@@ -1219,7 +1219,83 @@ OCIO_NAMESPACE_ENTER
         Baker& operator= (const Baker &);
         
         static void deleter(Baker* o);
-        
+
+        class Impl;
+        friend class Impl;
+        Impl * m_impl;
+        Impl * getImpl() { return m_impl; }
+        const Impl * getImpl() const { return m_impl; }
+    };
+
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    //!rst::
+    // FileConverter
+    // *****
+    //
+    // FileConverter can be used to perform LUT convertion, contrary to the Baker
+    // it works at the LUT1D and LUT3D level to actually keep all LUTs data
+    // that could be lost when using the Baker (thinking about things like
+    // input range that get lost).
+    //
+    // **Usage Example:** *Convert a resolve LUT to CLF*
+    //
+    // .. code-block:: cpp
+    //
+    //    OCIO::ConstConfigRcPtr config = OCIO::Config::CreateFromEnv();
+    //    OCIO::FileConverterRcPtr baker = OCIO::FileConverter::Create();
+
+    class OCIOEXPORT FileConverter
+    {
+    public:
+        //!cpp:function:: create a new Baker
+        static FileConverterRcPtr Create();
+
+        //!cpp:function:: create a copy of this Baker
+        FileConverterRcPtr createEditableCopy() const;
+
+        //!cpp:function:: set the config to use
+        void setConfig(const ConstConfigRcPtr & config);
+        //!cpp:function:: get the config to use
+        ConstConfigRcPtr getConfig() const;
+
+        //!cpp:function:: set the input lut
+        void setInputFile(const char * lutPath);
+        //!cpp:function:: get the input lut
+        const char * getInputFile() const;
+
+        //!cpp:function:: set the lut output format
+        void setFormat(const char * formatName);
+        //!cpp:function:: get the lut output format
+        const char * getFormat() const;
+
+        //!cpp:function:: set *optional* meta data for luts that support it
+        void setMetadata(const char * metadata);
+        //!cpp:function:: get the meta data that has been set
+        const char * getMetadata() const;
+
+        //!cpp:function:: convert the lut to the target format into the output
+        // stream
+        void convert(std::ostream & os) const;
+
+        //!cpp:function:: get the number of lut writers
+        static int getNumFormats();
+
+        //!cpp:function:: get the lut writer at index, return empty string if
+        // an invalid index is specified
+        static const char * getFormatNameByIndex(int index);
+        static const char * getFormatExtensionByIndex(int index);
+
+    private:
+        FileConverter();
+        ~FileConverter();
+
+        FileConverter(const FileConverter &);
+        FileConverter& operator= (const FileConverter &);
+
+        static void deleter(FileConverter* o);
+
         class Impl;
         friend class Impl;
         Impl * m_impl;

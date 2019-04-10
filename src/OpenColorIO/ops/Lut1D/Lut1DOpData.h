@@ -33,6 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Op.h"
 #include "ops/OpArray.h"
+#include "PrivateTypes.h"
 
 OCIO_NAMESPACE_ENTER
 {
@@ -159,6 +160,14 @@ public:
 
     void setOutputBitDepth(BitDepth out) override;
     void setInputBitDepth(BitDepth in) override;
+
+    void setInputMinimum(const float *rs);
+
+    const FloatVec3 getInputMinimum() const;
+
+    void setInputMaximum(const float * rs);
+
+    const FloatVec3 getInputMaximum() const;
 
     // The file readers should call this to record the original scaling of the LUT values.
     inline void setFileBitDepth(BitDepth depth) { m_fileBitDepth = depth; }
@@ -321,6 +330,9 @@ private:
     // Note: This is hopefully only needed temporarily.
     //       Used in MakeFastLut1DFromInverse.
     BitDepth            m_fileBitDepth;
+
+    FloatVec3           m_fromMin;
+    FloatVec3           m_fromMax;
 
 };
 

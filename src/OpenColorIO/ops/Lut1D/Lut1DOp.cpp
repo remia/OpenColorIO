@@ -707,6 +707,8 @@ OCIO_NAMESPACE_ENTER
 
         data->getArray().setLength((unsigned long)lut->luts[0].size());
         data->getArray().setMaxColorComponents();
+        data->setInputMinimum(lut->from_min);
+        data->setInputMaximum(lut->from_max);
 
         float * values = &data->getArray().getValues()[0];
         for (unsigned long i = 0; i < lut->luts[0].size(); ++i)

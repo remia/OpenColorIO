@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <set>
 #include <vector>
+#include <array>
 
 OCIO_NAMESPACE_ENTER
 {
@@ -43,11 +44,13 @@ OCIO_NAMESPACE_ENTER
     typedef std::map<std::string, bool> StringBoolMap;
     typedef std::vector<std::string> StringVec;
     typedef std::set<std::string> StringSet;
-    
+
     typedef std::vector<ConstTransformRcPtr> ConstTransformVec;
     typedef std::vector<LookRcPtr> LookVec;
-    
+
     typedef std::vector<TransformDirection> TransformDirectionVec;
+
+    using FloatVec3 = std::array<float, 3>;
 }
 OCIO_NAMESPACE_EXIT
 

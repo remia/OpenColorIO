@@ -803,6 +803,8 @@ void CreateLut3DOp(OpRcPtrVec & ops,
     // Need to transform to Blue fast for OpData::Lut3D.
     Lut3DOpDataRcPtr lutBF(new Lut3DOpData(lutSize));
     lutBF->setInterpolation(interpolation);
+    lutBF->setInputMinimum(lut->from_min);
+    lutBF->setInputMaximum(lut->from_max);
 
     Array & lutArray = lutBF->getArray();
 
