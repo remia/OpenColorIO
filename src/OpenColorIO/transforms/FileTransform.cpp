@@ -61,10 +61,12 @@ OCIO_NAMESPACE_ENTER
         std::string src_;
         std::string cccid_;
         Interpolation interp_;
-        
+        Metadata metadata_;
+
         Impl() :
             dir_(TRANSFORM_DIR_FORWARD),
-            interp_(INTERP_UNKNOWN)
+            interp_(INTERP_UNKNOWN),
+            metadata_("FileTransform")
         { }
         
         ~Impl()
@@ -78,6 +80,7 @@ OCIO_NAMESPACE_ENTER
                 src_ = rhs.src_;
                 cccid_ = rhs.cccid_;
                 interp_ = rhs.interp_;
+                metadata_ = rhs.metadata_;
             }
             return *this;
         }
@@ -180,7 +183,17 @@ OCIO_NAMESPACE_ENTER
         return FormatRegistry::GetInstance().getFormatExtensionByIndex(
             FORMAT_CAPABILITY_READ, index);
     }
-    
+
+    Metadata & FileTransform::getMetadata()
+    {
+        return getImpl()->metadata_;
+    }
+
+    const Metadata & FileTransform::getMetadata() const
+    {
+        return getImpl()->metadata_;
+    }
+
     std::ostream& operator<< (std::ostream& os, const FileTransform& t)
     {
         os << "<FileTransform ";
@@ -412,9 +425,13 @@ OCIO_NAMESPACE_ENTER
         }
         return "Unknown Format";
     }
-        
-    
-    
+
+    void FileFormat::DumpMetadata(CachedFileRcPtr cachedFile,
+                                  Metadata & metadata) const
+    {
+        return;
+    }
+
     void FileFormat::Write(const Baker & /*baker*/,
                            const std::string & formatName,
                            std::ostream & /*ostream*/) const
@@ -775,6 +792,9 @@ OCIO_NAMESPACE_ENTER
                                  cachedFile, fileTransform,
                                  dir);
 
+            Metadata &m = const_cast<Metadata&>(fileTransform.getMetadata());
+            format->DumpMetadata(cachedFile, m);
+
             // File has been loaded completely. It may now be referenced again.
             ConstOpDataRcPtr data = fileNoOp->data();
             auto fileData = DynamicPtrCast<const FileNoOpData>(data);
@@ -997,6 +1017,38 @@ OIIO_ADD_TEST(FileTransform, validate)
 
     tr->setSrc("");
     OIIO_CHECK_THROW(tr->validate(), OCIO::Exception);
+}
+
+OIIO_ADD_TEST(FileTransformMetadata, validate)
+{
+    const std::string filePath(std::string(OCIO::getTestFilesDir()) + "/" + "metadata.clf");
+
+    OCIO::FileTransformRcPtr pFileTransform = OCIO::FileTransform::Create();
+    pFileTransform->setInterpolation(OCIO::INTERP_BEST);
+    pFileTransform->setDirection(OCIO::TRANSFORM_DIR_FORWARD);
+    pFileTransform->setSrc(filePath.c_str());
+    OIIO_CHECK_NO_THROW(pFileTransform->validate());
+
+    // Create empty Config to use
+    OCIO::ConfigRcPtr pConfig = OCIO::Config::Create();
+    OCIO::ContextRcPtr pContext = OCIO::Context::Create();
+    OCIO::ConstProcessorRcPtr pProcessor = pConfig->getProcessor(pFileTransform);
+
+    OCIO::Metadata &m = pFileTransform->getMetadata();
+    OIIO_CHECK_EQUAL(m["CTFVersion"].getValue(), "1.3");
+    OIIO_CHECK_EQUAL(m["ID"].getValue(), "1");
+    OIIO_CHECK_EQUAL(m["Name"].getValue(), "info metadata example");
+    OIIO_CHECK_EQUAL(m["InputDescriptor"].getValue(), "inputDesc");
+    OIIO_CHECK_EQUAL(m["OutputDescriptor"].getValue(), "outputDesc");
+    OIIO_CHECK_EQUAL(m["Description"].getValue(), "Example of Info metadata");
+    OIIO_CHECK_EQUAL(m["Info"]["Copyright"].getValue(), "Copyright 2013 Autodesk");
+    OIIO_CHECK_EQUAL(m["Info"]["Release"].getValue(), "2015");
+    OIIO_CHECK_EQUAL(m["Info"]["InputColorSpace"]["Description"].getValue(), "Input color space description");
+    OIIO_CHECK_EQUAL(m["Info"]["InputColorSpace"]["Profile"].getValue(), "Input color space profile");
+
+    OIIO_CHECK_EQUAL(m["Info"]["Category"]["Name"].getValue(), "Category name");
+    OCIO::Metadata::Attributes attrs = { {"att1", "test1"}, {"att2", "test2"} };
+    OIIO_CHECK_ASSERT(m["Info"]["Category"]["Name"].getAttributes() == attrs);
 }
 
 

@@ -30,8 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <OpenColorIO/OpenColorIO.h>
 
-#include "ops/Metadata.h"
-
 OCIO_NAMESPACE_ENTER
 {
 // Find a given name on a list of metadata items.
@@ -96,8 +94,8 @@ const Metadata::Attributes& Metadata::getAttributes() const
 
 void Metadata::addAttribute(const Attribute& attribute)
 {
-    // If this attribute already exists, overwrite the value. 
-    // Otherwise, add the new attribute. This ensures that we do not 
+    // If this attribute already exists, overwrite the value.
+    // Otherwise, add the new attribute. This ensures that we do not
     // have the same attribute twice.
     Attributes::iterator it = m_attributes.begin();
     const Attributes::iterator itEnd = m_attributes.end();
@@ -130,7 +128,7 @@ Metadata::MetadataList Metadata::getItems() const
 Metadata::NameList Metadata::getItemsNames() const
 {
     NameList names;
-    for (MetadataList::const_iterator it = m_items.begin(), 
+    for (MetadataList::const_iterator it = m_items.begin(),
                                         end = m_items.end(); it != end; ++it)
     {
         names.push_back(it->getName());
@@ -157,7 +155,7 @@ void Metadata::clear()
 
 void Metadata::remove(const std::string & itemName)
 {
-    MetadataList::iterator 
+    MetadataList::iterator
         it = findItem<MetadataList::iterator>(m_items, itemName);
     if (it == m_items.end())
     {
@@ -172,7 +170,7 @@ void Metadata::remove(const std::string & itemName)
 
 Metadata& Metadata::operator[](const std::string & itemName)
 {
-    MetadataList::iterator 
+    MetadataList::iterator
         it = findItem<MetadataList::iterator>(m_items, itemName);
     if (it == m_items.end())
     {
@@ -185,7 +183,7 @@ Metadata& Metadata::operator[](const std::string & itemName)
 
 const Metadata& Metadata::operator[](const std::string & itemName) const
 {
-    MetadataList::const_iterator 
+    MetadataList::const_iterator
         it = findItem<MetadataList::const_iterator>(m_items, itemName);
     if (it == m_items.end()) {
         std::ostringstream os;
@@ -270,13 +268,13 @@ OIIO_ADD_TEST(Metadata, test_accessors)
         const OCIO::Metadata cinfo = info;
         OIIO_CHECK_EQUAL(cinfo["Copyright"].getValue(), "Copyright 2013 Autodesk");
         OIIO_CHECK_EQUAL(cinfo["Release"].getValue(), "2015");
-        OIIO_CHECK_EQUAL(cinfo["InputColorSpace"]["Description"].getValue(), 
+        OIIO_CHECK_EQUAL(cinfo["InputColorSpace"]["Description"].getValue(),
                          "Input color space description");
-        OIIO_CHECK_EQUAL(cinfo["InputColorSpace"]["Profile"].getValue(), 
+        OIIO_CHECK_EQUAL(cinfo["InputColorSpace"]["Profile"].getValue(),
                          "Input color space profile");
-        OIIO_CHECK_EQUAL(cinfo["OutputColorSpace"]["Description"].getValue(), 
+        OIIO_CHECK_EQUAL(cinfo["OutputColorSpace"]["Description"].getValue(),
                          "Output color space description");
-        OIIO_CHECK_EQUAL(cinfo["OutputColorSpace"]["Profile"].getValue(), 
+        OIIO_CHECK_EQUAL(cinfo["OutputColorSpace"]["Profile"].getValue(),
                          "Output color space profile");
         OIIO_CHECK_EQUAL(cinfo["Category"]["Name"].getValue(),
                          "Color space category name");
@@ -322,7 +320,7 @@ OIIO_ADD_TEST(Metadata, test_accessors)
     {
         const OCIO::Metadata& cinfo = info;
         OIIO_CHECK_EQUAL(cinfo["Extra"]["Item3"].getItems().size(), 2);
-        OIIO_CHECK_EQUAL(cinfo["Extra"]["Item3"]["Item3a"].getValue(), 
+        OIIO_CHECK_EQUAL(cinfo["Extra"]["Item3"]["Item3a"].getValue(),
                          "Extra:Item3:Item3a");
         OIIO_CHECK_EQUAL(cinfo["Extra"]["Item3"]["Item3c"].getValue(),
                          "Extra:Item3:Item3c");
@@ -368,8 +366,8 @@ OIIO_ADD_TEST(Metadata, test_accessors)
     // Check exceptions.
     const OCIO::Metadata& cinfo = info;
 
-    OIIO_CHECK_THROW_WHAT(cinfo["OutputColorSpace"].getValue(), 
-                          OCIO::Exception, 
+    OIIO_CHECK_THROW_WHAT(cinfo["OutputColorSpace"].getValue(),
+                          OCIO::Exception,
                           "Metadata should be a leaf 'OutputColorSpace'");
 
     OIIO_CHECK_THROW_WHAT(cinfo["OutputColorSpace"]["Profile"].getItems(),
@@ -383,7 +381,7 @@ OIIO_ADD_TEST(Metadata, test_accessors)
     OIIO_CHECK_THROW_WHAT(info["OutputColorSpace"].remove("WrongName"),
                           OCIO::Exception,
                           "Metadata element not found 'WrongName'");
-    
+
 }
 
 #endif

@@ -45,6 +45,7 @@ set(SOURCES
 	Look.cpp
 	LookParse.cpp
 	MathUtils.cpp
+	Metadata.cpp
 	md5/md5.cpp
 	OCIOYaml.cpp
 	Op.cpp
@@ -79,7 +80,6 @@ set(SOURCES
 	ops/Matrix/MatrixOpCPU.cpp
 	ops/Matrix/MatrixOpData.cpp
 	ops/Matrix/MatrixOps.cpp
-	ops/Metadata.cpp
 	ops/NoOp/NoOps.cpp
 	ops/Range/RangeOpCPU.cpp
 	ops/Range/RangeOpData.cpp
