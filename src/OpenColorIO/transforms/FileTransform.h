@@ -91,6 +91,7 @@ OCIO_NAMESPACE_ENTER
                            std::ostream & ostream) const;
 
         virtual void Write(const OpRcPtrVec & ops,
+                           const Metadata & metadata,
                            const std::string & formatName,
                            std::ostream & ostream) const;
 

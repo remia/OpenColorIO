@@ -442,6 +442,7 @@ OCIO_NAMESPACE_ENTER
     }
 
     void FileFormat::Write(const OpRcPtrVec & ops,
+                           const Metadata & metadata,
                            const std::string & formatName,
                            std::ostream & ostream) const
     {

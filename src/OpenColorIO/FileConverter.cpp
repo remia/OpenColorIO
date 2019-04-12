@@ -28,7 +28,7 @@ OCIO_NAMESPACE_ENTER
 
         ConfigRcPtr config_;
         std::string formatName_;
-        std::string metadata_;
+        Metadata metadata_ = Metadata("Empty");
         std::string inputFile_;
 
         Impl()
@@ -45,6 +45,8 @@ OCIO_NAMESPACE_ENTER
             {
                 config_ = rhs.config_;
                 formatName_ = rhs.formatName_;
+                metadata_ = rhs.metadata_;
+                inputFile_ = rhs.inputFile_;
             }
             return *this;
         }
@@ -113,14 +115,19 @@ OCIO_NAMESPACE_ENTER
         return getImpl()->formatName_.c_str();
     }
 
-    void FileConverter::setMetadata(const char * metadata)
+    void FileConverter::setMetadata(const Metadata & metadata)
     {
         getImpl()->metadata_ = metadata;
     }
 
-    const char * FileConverter::getMetadata() const
+    Metadata & FileConverter::getMetadata()
     {
-        return getImpl()->metadata_.c_str();
+        return getImpl()->metadata_;
+    }
+
+    const Metadata & FileConverter::getMetadata() const
+    {
+        return getImpl()->metadata_;
     }
 
     void FileConverter::convert(std::ostream & os) const
@@ -151,16 +158,18 @@ OCIO_NAMESPACE_ENTER
 
         try
         {
-            // Extract Ops from input LUT
             OpRcPtrVec ops;
 
             ContextRcPtr pContext = Context::Create();
             FileTransformRcPtr ft = FileTransform::Create();
             ft->setSrc(getImpl()->inputFile_.c_str());
             ft->setInterpolation(INTERP_BEST);
+            
+            const Metadata & newMeta = getImpl()->metadata_;
+            const Metadata metadata = newMeta.isEmpty() ? ft->getMetadata() : newMeta;
 
-            BuildFileOps(ops, *getImpl()->config_, pContext, *ft, TRANSFORM_DIR_FORWARD);
-            fmt->Write(ops, getImpl()->formatName_, os);
+            BuildFileTransformOps(ops, *getImpl()->config_, pContext, *ft, TRANSFORM_DIR_FORWARD);
+            fmt->Write(ops, metadata, getImpl()->formatName_, os);
         }
         catch(std::exception & e)
         {
@@ -181,7 +190,7 @@ OCIO_NAMESPACE_EXIT
 namespace OCIO = OCIO_NAMESPACE;
 #include "unittest.h"
 
-OIIO_ADD_TEST(FileConverter_Unit_Tests, convert)
+OIIO_ADD_TEST(FileConverter_Unit_Tests, ConvertFromCube)
 {
     OCIO::FileConverterRcPtr convert = OCIO::FileConverter::Create();
 
@@ -241,11 +250,60 @@ OIIO_ADD_TEST(FileConverter_Unit_Tests, convert)
     convert->setConfig(config);
     convert->setFormat("Academy/ASC Common LUT Format");
     OIIO_CHECK_EQUAL("Academy/ASC Common LUT Format", std::string(convert->getFormat()));
-    convert->setMetadata("this is some metadata!");
-    OIIO_CHECK_EQUAL("this is some metadata!", std::string(convert->getMetadata()));
     std::string lutPath = std::string(OCIO::getTestFilesDir()) + "/" + "resolve_cube_1d3d.cube";
     convert->setInputFile(lutPath.c_str());
     OIIO_CHECK_EQUAL(lutPath.c_str(), std::string(convert->getInputFile()));
+
+    std::ostringstream os;
+    convert->convert(os);
+    OIIO_CHECK_EQUAL(EXPECTED, os.str());
+    OIIO_CHECK_EQUAL(1, convert->getNumFormats());
+}
+
+OIIO_ADD_TEST(FileConverter_Unit_Tests, ConvertAdjustMetadata)
+{
+    OCIO::FileConverterRcPtr convert = OCIO::FileConverter::Create();
+
+    const std::string EXPECTED = R"(
+        <?xml version="1.0" encoding="UTF-8"?>
+        <ProcessList version="1.4" id="2" name="generic aces lmt">
+            <Description>Generic ACES LMT</Description>
+            <InputDescriptor>ACES2065-1</InputDescriptor>
+            <OutputDescriptor>ACES2065-1</OutputDescriptor>
+
+            <Info>
+                <Category>ACES LMT</Category>
+            </Info>
+
+            <Matrix outBitDepth="12i" name="identity" inBitDepth="32f">
+                <Array dim="4 4 4">
+                    4095 0 0 0
+                    0 4095 0 0
+                    0 0 4095 0
+                    0 0 0 4095
+                </Array>
+            </Matrix>
+        </ProcessList>
+    )";
+    
+    OCIO::ConstConfigRcPtr config;
+    OIIO_CHECK_NO_THROW(config = OCIO::Config::Create());
+    convert->setConfig(config);
+    convert->setFormat("Academy/ASC Common LUT Format");
+    OIIO_CHECK_EQUAL("Academy/ASC Common LUT Format", std::string(convert->getFormat()));
+    std::string lutPath = std::string(OCIO::getTestFilesDir()) + "/" + "metadata.clf";
+    convert->setInputFile(lutPath.c_str());
+    OIIO_CHECK_EQUAL(lutPath.c_str(), std::string(convert->getInputFile()));
+    
+    OCIO::Metadata metadata("FileTransform");
+    metadata["CTFVersion"] = "1.4";
+    metadata["ID"] = "2";
+    metadata["Name"] = "generic aces lmt";
+    metadata["Description"] = "Generic ACES LMT";
+    metadata["InputDescriptor"] = "ACES2065-1";
+    metadata["OutputDescriptor"] = "ACES2065-1";
+    metadata["Info"]["Category"] = "ACES LMT";
+    convert->setMetadata(metadata);
 
     std::ostringstream os;
     convert->convert(os);

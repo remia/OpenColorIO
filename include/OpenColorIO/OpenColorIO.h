@@ -1106,7 +1106,7 @@ OCIO_NAMESPACE_ENTER
 
     //!cpp:class::
     // This class provides an hierarchical, name-associative metadata container.
-    class Metadata
+    class OCIOEXPORT Metadata
     {
     public:
         typedef std::list<Metadata> MetadataList;
@@ -1348,10 +1348,12 @@ OCIO_NAMESPACE_ENTER
         //!cpp:function:: get the lut output format
         const char * getFormat() const;
 
-        //!cpp:function:: set *optional* meta data for luts that support it
-        void setMetadata(const char * metadata);
-        //!cpp:function:: get the meta data that has been set
-        const char * getMetadata() const;
+        //!cpp:function::
+        void setMetadata(const Metadata & metadata);
+        //!cpp:function::
+        Metadata & getMetadata();
+        //!cpp:function::
+        const Metadata & getMetadata() const;
 
         //!cpp:function:: convert the lut to the target format into the output
         // stream

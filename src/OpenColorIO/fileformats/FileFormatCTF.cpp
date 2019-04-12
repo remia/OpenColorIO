@@ -139,6 +139,7 @@ public:
                          const std::string & fileName) const override;
 
     void Write(const OpRcPtrVec & ops,
+               const Metadata & metadata,
                const std::string & formatName,
                std::ostream & ostream) const override;
 
@@ -993,6 +994,7 @@ void LocalFileFormat::DumpMetadata(
 }
 
 void LocalFileFormat::Write(const OpRcPtrVec & ops,
+                            const Metadata & metadata,
                             const std::string & formatName,
                             std::ostream & ostream) const
 {
