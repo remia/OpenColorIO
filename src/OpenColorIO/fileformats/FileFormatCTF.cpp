@@ -1008,11 +1008,21 @@ void LocalFileFormat::Write(const OpRcPtrVec & ops,
             ConstLut1DOpDataRcPtr d = DynamicPtrCast<const Lut1DOpData>(op->data());
             std::cerr << "\tLUT1D Size : " << d->getArray().getLength() << "\n";
             std::cerr << "\tLUT1D Range : " << d->getInputMinimum()[0] << " " << d->getInputMaximum()[0] << "\n";
+            std::cerr << "\tLUT1D Values :\n";
+            const Array::Values & lutValues = d->getArray().getValues();
+            for(unsigned long i = 0; i < d->getArray().getNumValues(); i += 3) {
+                std::cerr << "\t\t" << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << "\n";
+            }
         }
         else if (op->data()->getType() == OpData::Lut3DType) {
             ConstLut3DOpDataRcPtr d = DynamicPtrCast<const Lut3DOpData>(op->data());
             std::cerr << "\tLUT3D Size : " << d->getGridSize() << "\n";
             std::cerr << "\tLUT3D Range : " << d->getInputMinimum()[0] << " " << d->getInputMaximum()[0] << "\n";
+            std::cerr << "\tLUT3D Values :\n";
+            const Array::Values & lutValues = d->getArray().getValues();
+            for(unsigned long i = 0; i < d->getArray().getNumValues(); i += 3) {
+                std::cerr << "\t\t" << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << "\n";
+            }
         }
     }
 }
