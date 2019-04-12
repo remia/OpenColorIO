@@ -36,7 +36,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ops/IndexMapping.h"
 #include "ops/Lut1D/Lut1DOpData.h"
 #include "ops/Lut3D/Lut3DOpData.h"
-#include "ops/Metadata.h"
 #include "ops/Range/RangeOpData.h"
 #include "ops/reference/ReferenceOpData.h"
 

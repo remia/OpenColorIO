@@ -544,7 +544,12 @@ OCIO_NAMESPACE_ENTER
         //!cpp:function:: get the lut reader extension at index, return empty string if
         // an invalid index is specified
         static const char * getFormatExtensionByIndex(int index);
-        
+
+        //!cpp:function::
+        Metadata & getMetadata();
+        //!cpp:function::
+        const Metadata & getMetadata() const;
+
     private:
         FileTransform();
         FileTransform(const FileTransform &);

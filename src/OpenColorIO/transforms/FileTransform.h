@@ -82,7 +82,10 @@ OCIO_NAMESPACE_ENTER
         virtual CachedFileRcPtr Read(
             std::istream & istream,
             const std::string & originalFileName) const = 0;
-        
+
+        virtual void DumpMetadata(CachedFileRcPtr cachedFile,
+                                  Metadata & metadata) const;
+
         virtual void Write(const Baker & baker,
                            const std::string & formatName,
                            std::ostream & ostream) const;

@@ -142,6 +142,8 @@ public:
                const std::string & formatName,
                std::ostream & ostream) const override;
 
+    void DumpMetadata(CachedFileRcPtr cachedFile,
+                      Metadata & metadata) const override;
 
     void BuildFileOps(OpRcPtrVec & ops,
                       const Config & config,
@@ -966,6 +968,30 @@ CachedFileRcPtr LocalFileFormat::Read(
     return cachedFile;
 }
 
+void LocalFileFormat::DumpMetadata(
+    CachedFileRcPtr untypedCachedFile,
+    Metadata & metadata) const
+{
+    LocalCachedFileRcPtr cachedFile =
+        DynamicPtrCast<LocalCachedFile>(untypedCachedFile);
+
+    std::ostringstream oStr;
+    oStr << cachedFile->m_transform->getCTFVersion();
+    metadata["CTFVersion"] = oStr.str();
+
+    metadata["ID"] = cachedFile->m_transform->getID();
+    metadata["Name"] = cachedFile->m_transform->getName();
+    metadata["InputDescriptor"] = cachedFile->m_transform->getInputDescriptor();
+    metadata["OutputDescriptor"] = cachedFile->m_transform->getOutputDescriptor();
+    metadata["Info"] = cachedFile->m_transform->getInfo();
+
+    for (std::string &desc : cachedFile->m_transform->getDescriptions()) {
+        // Should be only one description tag at CLF root
+        metadata["Description"] = desc;
+        break;
+    }
+}
+
 void LocalFileFormat::Write(const OpRcPtrVec & ops,
                             const std::string & formatName,
                             std::ostream & ostream) const
@@ -988,7 +1014,7 @@ void LocalFileFormat::Write(const OpRcPtrVec & ops,
         }
     }
 }
-
+    
 // Helper called by LocalFileFormat::BuildFileOps
 void BuildOp(OpRcPtrVec & ops,
              const Config& config,
