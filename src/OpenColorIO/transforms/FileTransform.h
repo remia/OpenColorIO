@@ -152,6 +152,8 @@ OCIO_NAMESPACE_ENTER
         StringVec m_readFormatExtensions;
         StringVec m_writeFormatNames;
         StringVec m_writeFormatExtensions;
+        StringVec m_convertFormatNames;
+        StringVec m_convertFormatExtensions;
     };
     
     // Registry Builders

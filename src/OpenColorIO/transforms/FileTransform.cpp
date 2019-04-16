@@ -329,6 +329,12 @@ OCIO_NAMESPACE_ENTER
                 m_writeFormatNames.push_back(formatInfoVec[i].name);
                 m_writeFormatExtensions.push_back(formatInfoVec[i].extension);
             }
+            
+            if(formatInfoVec[i].capabilities & FORMAT_CAPABILITY_CONVERT)
+            {
+                m_convertFormatNames.push_back(formatInfoVec[i].name);
+                m_convertFormatExtensions.push_back(formatInfoVec[i].extension);
+            }
         }
         
         m_rawFormats.push_back(format);
@@ -359,6 +365,11 @@ OCIO_NAMESPACE_ENTER
         {
             return static_cast<int>(m_writeFormatNames.size());
         }
+        else if(capability == FORMAT_CAPABILITY_CONVERT)
+        {
+            return static_cast<int>(m_convertFormatNames.size());
+        }
+
         return 0;
     }
     
@@ -380,6 +391,14 @@ OCIO_NAMESPACE_ENTER
                 return "";
             }
             return m_writeFormatNames[index].c_str();
+        }
+        else if(capability == FORMAT_CAPABILITY_CONVERT)
+        {
+            if(index<0 || index>=static_cast<int>(m_convertFormatNames.size()))
+            {
+                return "";
+            }
+            return m_convertFormatNames[index].c_str();
         }
         return "";
     }
@@ -405,6 +424,16 @@ OCIO_NAMESPACE_ENTER
             }
             return m_writeFormatExtensions[index].c_str();
         }
+        else if(capability == FORMAT_CAPABILITY_CONVERT)
+        {
+            if(index<0
+                || index>=static_cast<int>(m_convertFormatExtensions.size()))
+            {
+                return "";
+            }
+            return m_convertFormatExtensions[index].c_str();
+        }
+
         return "";
     }
     

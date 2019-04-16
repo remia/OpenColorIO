@@ -194,7 +194,7 @@ OIIO_ADD_TEST(FileConverter_Unit_Tests, ConvertFromCube)
 {
     OCIO::FileConverterRcPtr convert = OCIO::FileConverter::Create();
 
-    const std::string EXPECTED = R"(<?xml version="1.0" ?>
+    const std::string EXPECTED = R"(<?xml version="1.0" encoding="UTF-8"?>
 <ProcessList compCLFversion="2.0" id="" name="" xmlns="urn:NATAS:AMPAS:LUT:v2.0">
     <LUT1D inBitDepth="16f" outBitDepth="16f">
         <IndexMap dim="2">-0.5000000000@0 1.5000000000@5</IndexMap>
@@ -254,7 +254,7 @@ OIIO_ADD_TEST(FileConverter_Unit_Tests, ConvertFromCube)
     std::ostringstream os;
     convert->convert(os);
     OIIO_CHECK_EQUAL(EXPECTED, os.str());
-    OIIO_CHECK_EQUAL(1, convert->getNumFormats());
+    OIIO_CHECK_EQUAL(2, convert->getNumFormats());
 }
 
 OIIO_ADD_TEST(FileConverter_Unit_Tests, ConvertAdjustMetadata)
@@ -305,7 +305,7 @@ OIIO_ADD_TEST(FileConverter_Unit_Tests, ConvertAdjustMetadata)
     std::ostringstream os;
     convert->convert(os);
     OIIO_CHECK_EQUAL(EXPECTED, os.str());
-    OIIO_CHECK_EQUAL(1, convert->getNumFormats());
+    OIIO_CHECK_EQUAL(2, convert->getNumFormats());
 }
 
 #endif // OCIO_BUILD_TESTS

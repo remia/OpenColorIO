@@ -997,86 +997,151 @@ void LocalFileFormat::DumpMetadata(
 void LocalFileFormat::Write(const OpRcPtrVec & ops,
                             const Metadata & metadata,
                             const std::string & formatName,
-                            std::ostream & ostream) const
+                            std::ostream & os) const
 {
-    std::cerr << "Building CLF...\n";
+    const Metadata::NameList & nameList = metadata.getItemsNames();
+    int depth = 0;
 
-    ostream << "<?xml version=\"1.0\" ?>" << std::endl;
-    ostream << "<ProcessList compCLFversion=\"2.0\" id=\"\" name=\"\" xmlns=\"urn:NATAS:AMPAS:LUT:v2.0\">" << std::endl;
-    std::string currentIndent = "";
+    auto indent = [&]() { return std::string(std::max(0, depth * 4), ' '); };
+
+    auto hasElem = [&](
+        const std::string & elemName)
+    {
+        auto it = std::find(nameList.begin(), nameList.end(), elemName);
+        return it != nameList.end();
+    };
+
+    auto getElem = [&](
+        const std::string & elemName,
+        const std::string & defaultValue = "")
+    {
+        if (hasElem(elemName))
+            return metadata[elemName].getValue();
+        else
+            return defaultValue;
+    };
+
+    std::function<void(
+        std::ostream &,
+        const Metadata &,
+        const int)> writeElem =
+    [&](
+        std::ostream & os,
+        const Metadata & elem,
+        const int itemDepth)
+    -> void
+    {
+        if (elem.isLeaf()) {
+            os <<  std::string(itemDepth, '\t')
+               << "<" << elem.getName() << ">"
+               << elem.getValue() << "</"
+               << elem.getName() << ">\n";
+        }
+        else {
+            for (auto &item : elem.getItems()) {
+                writeElem(os, item, itemDepth + 1);
+            }
+        }
+    };
+
+    os << indent() << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    os << indent() << "<ProcessList ";
+        os << "compCLFversion=\"" << getElem("CTFVersion", "2.0") << "\" ";
+        os << "id=\"" << getElem("ID") << "\" ";
+        os << "name=\"" << getElem("Name") << "\" ";
+        os << "xmlns=\"" << "urn:NATAS:AMPAS:LUT:v2.0" << "\">\n";
+
+    depth += 1;
+
+    if (hasElem("Description"))
+        os << indent() << "<Description>" << getElem("Description") << "</Description>\n";
+    if (hasElem("InputDescriptor"))
+        os << indent() << "<InputDescriptor>" << getElem("InputDescriptor") << "</InputDescriptor>\n";
+    if (hasElem("OutputDescriptor"))
+        os << indent() << "<OutputDescriptor>" << getElem("OutputDescriptor") << "</OutputDescriptor>\n";
+
+    if (hasElem("Info") && !metadata["Info"].isLeaf()) {
+        os << indent() << "<Info>\n";
+        writeElem(os, metadata["Info"], depth);
+        os << indent() << "</Info>\n";
+    }
 
     for (ConstOpRcPtr op : ops) {
-        std::cerr << "\t" << op->getInfo() << "\n";
-        std::cerr << "\t" << op->data()->getName();
-
-        if (op->data()->getType() == OpData::Lut1DType)
-        {
-
+        if (op->data()->getType() == OpData::Lut1DType) {
             ConstLut1DOpDataRcPtr d = DynamicPtrCast<const Lut1DOpData>(op->data());
-            std::cerr << "\tLUT1D Size : " << d->getArray().getLength() << "\n";
-            std::cerr << "\tLUT1D Range : " << d->getInputMinimum()[0] << " " << d->getInputMaximum()[0] << "\n";
-            std::cerr << "\tLUT1D Values :\n";
-            currentIndent += "    ";
-            ostream << currentIndent << "<LUT1D inBitDepth=\"" << op->getInputBitDepth() / 8 << "f\" ";
-            //ostream << "name=\"input - Shaper\" ";
-            ostream << "outBitDepth=\"" << op->getOutputBitDepth() / 8 << "f\">" << std::endl;
-            currentIndent += "    ";
-            ostream << std::fixed;
-            ostream << std::setprecision(10);
-            ostream << currentIndent << "<IndexMap dim=\"2\">" << d->getInputMinimum()[0] << "@"
-                    << "0 ";
-            ostream << d->getInputMaximum()[0] << "@" << d->getArray().getLength() - 1 << "</IndexMap>" << std::endl;
-            ostream << currentIndent << "<Array dim=\"" << d->getArray().getLength() << " 3\">" << std::endl;
+            const Array & array = d->getArray();
 
-            currentIndent += "    ";
+            os << indent() << "<LUT1D ";
+            //os << "name=\"\" ";
+            os << "inBitDepth=\"" << op->getInputBitDepth() / 8 << "f\" ";
+            os << "outBitDepth=\"" << op->getOutputBitDepth() / 8 << "f\">" << std::endl;
 
-            const Array::Values &lutValues = d->getArray().getValues();
-            for (unsigned long i = 0; i < d->getArray().getNumValues(); i += 3)
+            os << std::fixed;
+            os << std::setprecision(10);
+            depth += 1;
+
+            // NOTE: Currently only support 2 items IndexMap
+            os << indent() << "<IndexMap dim=\"2\">";
+            os << d->getInputMinimum()[0] << "@" << "0 ";
+            os << d->getInputMaximum()[0] << "@" << array.getLength() - 1;
+            os << "</IndexMap>\n";
+
+            os << indent() << "<Array dim=\"" << array.getLength() << " 3\">\n";
+
+            depth += 1;
+            const Array::Values &lutValues = array.getValues();
+            for (unsigned long i = 0; i < array.getNumValues(); i += 3)
             {
-                std::cerr << "\t\t" << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << "\n";
-                ostream << currentIndent << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << std::endl;
+                os << indent()
+                   << lutValues[i] << " "
+                   << lutValues[i + 1] << " "
+                   << lutValues[i + 2] << "\n";
             }
 
-            currentIndent.erase(currentIndent.length() - 4, 4);
-            ostream << currentIndent << "</Array>" << std::endl;
-            currentIndent.erase(currentIndent.length() - 4, 4);
-            ostream << currentIndent << "</LUT1D>" << std::endl;
-            currentIndent.erase(currentIndent.length() - 4, 4);
+            depth -= 1; os << indent() << "</Array>\n";
+            depth -= 1; os << indent() << "</LUT1D>\n";
         }
         else if (op->data()->getType() == OpData::Lut3DType) {
             ConstLut3DOpDataRcPtr d = DynamicPtrCast<const Lut3DOpData>(op->data());
-            std::cerr << "\tLUT3D Size : " << d->getGridSize() << "\n";
-            std::cerr << "\tLUT3D Range : " << d->getInputMinimum()[0] << " " << d->getInputMaximum()[0] << "\n";
-            std::cerr << "\tLUT3D Values :\n";
+            const Array & array = d->getArray();
 
-            currentIndent += "    ";
-            ostream << currentIndent << "<LUT3D inBitDepth=\"" << op->getInputBitDepth() / 8 << "f\" ";
-            //ostream << "name=\"input - Shaper\" ";
-            ostream << "outBitDepth=\"" << op->getOutputBitDepth() / 8 << "f\">" << std::endl;
-            currentIndent += "    ";
-            ostream << std::fixed;
-            ostream << std::setprecision(10);
-            ostream << currentIndent << "<IndexMap dim=\"2\">" << d->getInputMinimum()[0] << "@"
-                    << "0 ";
-            ostream << d->getInputMaximum()[0] << "@" << d->getArray().getLength() - 1 << "</IndexMap>" << std::endl;
-            ostream << currentIndent << "<Array dim=\"" << d->getArray().getLength() << " " << d->getArray().getLength()
-                    << " " << d->getArray().getLength() << " "
-                    << "3\">" << std::endl;
+            os << indent() << "<LUT3D ";
+            //os << "name=\"\" ";
+            os << "inBitDepth=\"" << op->getInputBitDepth() / 8 << "f\" ";
+            os << "outBitDepth=\"" << op->getOutputBitDepth() / 8 << "f\">\n";
 
-            currentIndent += "    ";
+            os << std::fixed;
+            os << std::setprecision(10);
+            depth += 1;
 
-            const Array::Values & lutValues = d->getArray().getValues();
-            for(unsigned long i = 0; i < d->getArray().getNumValues(); i += 3) {
-                std::cerr << "\t\t" << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << "\n";
-                ostream << currentIndent << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << std::endl;
+            // NOTE: Currently only support 2 items IndexMap
+            os << indent() << "<IndexMap dim=\"2\">";
+            os << d->getInputMinimum()[0] << "@" << "0 ";
+            os << d->getInputMaximum()[0] << "@" << array.getLength() - 1;
+            os << "</IndexMap>\n";
+
+            os << indent() << "<Array ";
+            os << "dim=\"" << array.getLength() << " "
+                           << array.getLength() << " "
+                           << array.getLength() << " "
+               << "3\">\n";
+
+            depth += 1;
+            const Array::Values & lutValues = array.getValues();
+            for(unsigned long i = 0; i < array.getNumValues(); i += 3) {
+                os << indent()
+                   << lutValues[i] << " "
+                   << lutValues[i + 1] << " "
+                   << lutValues[i + 2] << "\n";
             }
-            currentIndent.erase(currentIndent.length() - 4, 4);
-            ostream << currentIndent << "</Array>" << std::endl;
-            currentIndent.erase(currentIndent.length() - 4, 4);
-            ostream << currentIndent << "</LUT3D>" << std::endl;
+
+            depth -= 1; os << indent() << "</Array>\n";
+            depth -= 1; os << indent() << "</LUT3D>\n";
         }
     }
-    ostream << "</ProcessList>" << std::endl;
+
+    depth -= 1;
+    os << indent() << "</ProcessList>\n";
 }
     
 // Helper called by LocalFileFormat::BuildFileOps
