@@ -1032,15 +1032,16 @@ void LocalFileFormat::Write(const OpRcPtrVec & ops,
     -> void
     {
         if (elem.isLeaf()) {
-            os <<  std::string(itemDepth * 4, ' ')
+            os << std::string(itemDepth * 4, ' ')
                << "<" << elem.getName() << ">"
                << elem.getValue() << "</"
                << elem.getName() << ">\n";
         }
         else {
-            for (auto &item : elem.getItems()) {
+            os << std::string(itemDepth * 4, ' ') << "<" << elem.getName() << ">\n";
+            for (auto &item : elem.getItems())
                 writeElem(os, item, itemDepth + 1);
-            }
+            os << std::string(itemDepth * 4, ' ') << "</" << elem.getName() << ">\n";
         }
     };
 
@@ -1059,12 +1060,8 @@ void LocalFileFormat::Write(const OpRcPtrVec & ops,
         os << indent() << "<InputDescriptor>" << getElem("InputDescriptor") << "</InputDescriptor>\n";
     if (hasElem("OutputDescriptor"))
         os << indent() << "<OutputDescriptor>" << getElem("OutputDescriptor") << "</OutputDescriptor>\n";
-
-    if (hasElem("Info") && !metadata["Info"].isLeaf()) {
-        os << indent() << "<Info>\n";
+    if (hasElem("Info") && !metadata["Info"].isLeaf())
         writeElem(os, metadata["Info"], depth);
-        os << indent() << "</Info>\n";
-    }
 
     for (ConstOpRcPtr op : ops) {
         if (op->data()->getType() == OpData::Lut1DType) {
