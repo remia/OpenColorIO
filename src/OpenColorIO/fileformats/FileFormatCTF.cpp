@@ -1032,7 +1032,7 @@ void LocalFileFormat::Write(const OpRcPtrVec & ops,
     -> void
     {
         if (elem.isLeaf()) {
-            os <<  std::string(itemDepth, '\t')
+            os <<  std::string(itemDepth * 4, ' ')
                << "<" << elem.getName() << ">"
                << elem.getValue() << "</"
                << elem.getName() << ">\n";
