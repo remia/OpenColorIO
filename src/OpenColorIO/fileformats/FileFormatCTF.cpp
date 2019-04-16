@@ -28,6 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdio>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 
@@ -1000,31 +1001,82 @@ void LocalFileFormat::Write(const OpRcPtrVec & ops,
 {
     std::cerr << "Building CLF...\n";
 
+    ostream << "<?xml version=\"1.0\" ?>" << std::endl;
+    ostream << "<ProcessList compCLFversion=\"2.0\" id=\"\" name=\"\" xmlns=\"urn:NATAS:AMPAS:LUT:v2.0\">" << std::endl;
+    std::string currentIndent = "";
+
     for (ConstOpRcPtr op : ops) {
         std::cerr << "\t" << op->getInfo() << "\n";
         std::cerr << "\t" << op->data()->getName();
 
-        if (op->data()->getType() == OpData::Lut1DType) {
+        if (op->data()->getType() == OpData::Lut1DType)
+        {
+
             ConstLut1DOpDataRcPtr d = DynamicPtrCast<const Lut1DOpData>(op->data());
             std::cerr << "\tLUT1D Size : " << d->getArray().getLength() << "\n";
             std::cerr << "\tLUT1D Range : " << d->getInputMinimum()[0] << " " << d->getInputMaximum()[0] << "\n";
             std::cerr << "\tLUT1D Values :\n";
-            const Array::Values & lutValues = d->getArray().getValues();
-            for(unsigned long i = 0; i < d->getArray().getNumValues(); i += 3) {
+            currentIndent += "    ";
+            ostream << currentIndent << "<LUT1D inBitDepth=\"" << op->getInputBitDepth() / 8 << "f\" ";
+            //ostream << "name=\"input - Shaper\" ";
+            ostream << "outBitDepth=\"" << op->getOutputBitDepth() / 8 << "f\">" << std::endl;
+            currentIndent += "    ";
+            ostream << std::fixed;
+            ostream << std::setprecision(10);
+            ostream << currentIndent << "<IndexMap dim=\"2\">" << d->getInputMinimum()[0] << "@"
+                    << "0 ";
+            ostream << d->getInputMaximum()[0] << "@" << d->getArray().getLength() - 1 << "</IndexMap>" << std::endl;
+            ostream << currentIndent << "<Array dim=\"" << d->getArray().getLength() << " 3\">" << std::endl;
+
+            currentIndent += "    ";
+
+            const Array::Values &lutValues = d->getArray().getValues();
+            for (unsigned long i = 0; i < d->getArray().getNumValues(); i += 3)
+            {
                 std::cerr << "\t\t" << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << "\n";
+                ostream << currentIndent << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << std::endl;
             }
+
+            currentIndent.erase(currentIndent.length() - 4, 4);
+            ostream << currentIndent << "</Array>" << std::endl;
+            currentIndent.erase(currentIndent.length() - 4, 4);
+            ostream << currentIndent << "</LUT1D>" << std::endl;
+            currentIndent.erase(currentIndent.length() - 4, 4);
         }
         else if (op->data()->getType() == OpData::Lut3DType) {
             ConstLut3DOpDataRcPtr d = DynamicPtrCast<const Lut3DOpData>(op->data());
             std::cerr << "\tLUT3D Size : " << d->getGridSize() << "\n";
             std::cerr << "\tLUT3D Range : " << d->getInputMinimum()[0] << " " << d->getInputMaximum()[0] << "\n";
             std::cerr << "\tLUT3D Values :\n";
+
+            currentIndent += "    ";
+            ostream << currentIndent << "<LUT3D inBitDepth=\"" << op->getInputBitDepth() / 8 << "f\" ";
+            //ostream << "name=\"input - Shaper\" ";
+            ostream << "outBitDepth=\"" << op->getOutputBitDepth() / 8 << "f\">" << std::endl;
+            currentIndent += "    ";
+            ostream << std::fixed;
+            ostream << std::setprecision(10);
+            ostream << currentIndent << "<IndexMap dim=\"2\">" << d->getInputMinimum()[0] << "@"
+                    << "0 ";
+            ostream << d->getInputMaximum()[0] << "@" << d->getArray().getLength() - 1 << "</IndexMap>" << std::endl;
+            ostream << currentIndent << "<Array dim=\"" << d->getArray().getLength() << " " << d->getArray().getLength()
+                    << " " << d->getArray().getLength() << " "
+                    << "3\">" << std::endl;
+
+            currentIndent += "    ";
+
             const Array::Values & lutValues = d->getArray().getValues();
             for(unsigned long i = 0; i < d->getArray().getNumValues(); i += 3) {
                 std::cerr << "\t\t" << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << "\n";
+                ostream << currentIndent << lutValues[i] << " " << lutValues[i + 1] << " " << lutValues[i + 2] << std::endl;
             }
+            currentIndent.erase(currentIndent.length() - 4, 4);
+            ostream << currentIndent << "</Array>" << std::endl;
+            currentIndent.erase(currentIndent.length() - 4, 4);
+            ostream << currentIndent << "</LUT3D>" << std::endl;
         }
     }
+    ostream << "</ProcessList>" << std::endl;
 }
     
 // Helper called by LocalFileFormat::BuildFileOps
