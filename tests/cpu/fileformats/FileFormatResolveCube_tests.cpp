@@ -289,6 +289,71 @@ OCIO_ADD_TEST(FileFormatResolveCube, bake_1d)
     }
 }
 
+OCIO_ADD_TEST(FileFormatResolveCube, bake_1d_1d)
+{
+    OCIO::ConfigRcPtr config = OCIO::Config::Create();
+    {
+        OCIO::ColorSpaceRcPtr cs = OCIO::ColorSpace::Create();
+        cs->setName("input");
+        cs->setFamily("input");
+        config->addColorSpace(cs);
+        config->setRole(OCIO::ROLE_REFERENCE, cs->getName());
+    }
+    {
+        OCIO::ColorSpaceRcPtr cs = OCIO::ColorSpace::Create();
+        cs->setName("shaper");
+        cs->setFamily("shaper");
+        OCIO::ExponentTransformRcPtr transform1 = OCIO::ExponentTransform::Create();
+        double test[4] = {2.2, 2.2, 2.2, 1.0};
+        transform1->setValue(test);
+        cs->setTransform(transform1, OCIO::COLORSPACE_DIR_TO_REFERENCE);
+        config->addColorSpace(cs);
+    }
+    {
+        OCIO::ColorSpaceRcPtr cs = OCIO::ColorSpace::Create();
+        cs->setName("target");
+        cs->setFamily("target");
+        OCIO::ExponentTransformRcPtr transform1 = OCIO::ExponentTransform::Create();
+        double test[4] = {2.2, 2.2, 2.2, 1.0};
+        transform1->setValue(test);
+        cs->setTransform(transform1, OCIO::COLORSPACE_DIR_TO_REFERENCE);
+        config->addColorSpace(cs);
+    }
+
+    std::ostringstream bout;
+    bout << "LUT_1D_SIZE 10"                                        << "\n";
+    bout << "LUT_1D_INPUT_RANGE 0.000000 1.000000"                  << "\n";
+    bout << "0.000000 0.000000 0.000000"                            << "\n";
+    bout << "0.368344 0.368344 0.368344"                            << "\n";
+    bout << "0.504760 0.504760 0.504760"                            << "\n";
+    bout << "0.606913 0.606913 0.606913"                            << "\n";
+    bout << "0.691699 0.691699 0.691699"                            << "\n";
+    bout << "0.765539 0.765539 0.765539"                            << "\n";
+    bout << "0.831684 0.831684 0.831684"                            << "\n";
+    bout << "0.892049 0.892049 0.892049"                            << "\n";
+    bout << "0.947870 0.947870 0.947870"                            << "\n";
+    bout << "1.000000 1.000000 1.000000"                            << "\n";
+
+    OCIO::BakerRcPtr baker = OCIO::Baker::Create();
+    baker->setConfig(config);
+    baker->setFormat("resolve_cube");
+    baker->setInputSpace("input");
+    baker->setShaperSpace("shaper");
+    baker->setTargetSpace("target");
+    baker->setShaperSize(10);
+    std::ostringstream output;
+    baker->bake(output);
+
+    //
+    const StringUtils::StringVec osvec  = StringUtils::SplitByLines(output.str());
+    const StringUtils::StringVec resvec = StringUtils::SplitByLines(bout.str());
+    OCIO_CHECK_EQUAL(osvec.size(), resvec.size());
+    for(unsigned int i = 0; i < resvec.size(); ++i)
+    {
+        OCIO_CHECK_EQUAL(osvec[i], resvec[i]);
+    }
+}
+
 OCIO_ADD_TEST(FileFormatResolveCube, bake_3d)
 {
     OCIO::ConfigRcPtr config = OCIO::Config::Create();
@@ -550,4 +615,3 @@ OCIO_ADD_TEST(FileFormatResolveCube, load_ops)
     OCIO_CHECK_EQUAL(lut4Array[62], 0.0f);
 
 }
-
