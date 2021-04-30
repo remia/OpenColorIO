@@ -13,17 +13,25 @@ on:
       - RB-0.*
       - RB-1.*
       - gh-pages
+      # Temporary wheel test
+      - '**'
     tags-ignore:
       - v0.*
       - v1.*
+      # Temporary wheel test
+      - '**'
   pull_request:
     branches-ignore:
       - RB-0.*
       - RB-1.*
       - gh-pages
+      # Temporary wheel test
+      - '**'
     tags-ignore:
       - v0.*
       - v1.*
+      # Temporary wheel test
+      - '**'
 
 jobs:
   # Linux jobs run in Docker containers, so the latest OS version is OK. macOS 

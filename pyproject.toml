@@ -1,0 +1,19 @@
+
+[project]
+requires-python = ">=2.7, >=3.5"
+
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "cmake>=3.12",
+    "ninja",
+    # Documentation requirements
+    "six",
+    "testresources",
+    "recommonmark",
+    "sphinx-press-theme",
+    "sphinx-tabs",
+    "breathe"
+]
+build-backend = "setuptools.build_meta"

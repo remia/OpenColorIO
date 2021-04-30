@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright Contributors to the OpenColorIO Project.
+#
+
+name: Pip
+
+on:
+  # workflow_dispatch:
+  # pull_request:
+  push:
+    # branches:
+    #   - master
+    branches-ignore:
+      # Temporary wheel test
+      - '**'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest, macos-latest, ubuntu-latest]
+        python-version: ["3.5", "3.8", "3.9"]
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Add requirements
+      run: |
+        python -m pip install --upgrade wheel setuptools
+        python -m pip install -r tests/python/requirements.txt
+
+    - name: Build and install
+      run: pip install --verbose .
+
+    # Testing Python package independently of CMake / CTest seems hard
+    # - name: Test
+    #   run: python tests/python/OpenColorIOTestSuite.py

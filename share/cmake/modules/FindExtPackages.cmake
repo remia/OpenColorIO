@@ -52,6 +52,27 @@ if(OCIO_BUILD_APPS)
     find_package(lcms2 2.2 REQUIRED)
 endif()
 
+# NOTE: Performing Python package detection first to allow pybind11 to pick up
+# that instead of potentially chosing another installation.
+if(OCIO_BUILD_PYTHON OR OCIO_BUILD_DOCS)
+
+    # NOTE: We find Python once in the global scope so that it can be checked 
+    # and referenced throughout the project.
+
+    set(_Python_COMPONENTS Interpreter)
+
+    # Support building on manylinux docker images.
+    # https://pybind11.readthedocs.io/en/stable/compiling.html#findpython-mode
+    if(OCIO_BUILD_PYTHON AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
+        list(APPEND _Python_COMPONENTS Development.Module)
+    elseif(OCIO_BUILD_PYTHON)
+        list(APPEND _Python_COMPONENTS Development)
+    endif()
+
+    # Python
+    find_package(Python REQUIRED COMPONENTS ${_Python_COMPONENTS})
+endif()
+
 if(OCIO_BUILD_PYTHON)
 
     # NOTE: Depending of the compiler version pybind11 2.4.3 does not compile 
@@ -63,18 +84,4 @@ if(OCIO_BUILD_PYTHON)
     # pybind11
     # https://github.com/pybind/pybind11
     find_package(pybind11 2.6.1 REQUIRED)
-endif()
-
-if(OCIO_BUILD_PYTHON OR OCIO_BUILD_DOCS)
-
-    # NOTE: We find Python once in the global scope so that it can be checked 
-    # and referenced throughout the project.
-
-    set(_Python_COMPONENTS Interpreter)
-    if(OCIO_BUILD_PYTHON)
-        list(APPEND _Python_COMPONENTS Development)
-    endif()
-
-    # Python
-    find_package(Python REQUIRED COMPONENTS ${_Python_COMPONENTS})
 endif()

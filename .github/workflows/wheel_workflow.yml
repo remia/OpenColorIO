@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright Contributors to the OpenColorIO Project.
+#
+
+name: Wheel
+
+on: [pull_request]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, macos-10.15, windows-2019]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: '3.8'
+
+      - name: Build wheels
+        uses: joerick/cibuildwheel@v1.11.0
+        env:
+          # TODO: documentation fails to build on manylinux2010, maybe too old
+          # doxygen ? First fail in PyColorSpaceSet for documentation
+          # referencing PyOpenColorIO (eg. __sub__). Consequence is we don't
+          # support python 2.7, alternatively build without docstrings, or
+          # fox the doxygen issue.
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+
+          # DEBUG: increase pip debugging output
+          # CIBW_BUILD_VERBOSITY: 3
+
+          # NOTE: we still support 2.7, to remove it use: cp27-*
+          CIBW_SKIP: pp* cp27-manylinux* cp35-*
+
+          # To specify environment variable for the build
+          # CIBW_ENVIRONMENT: "BUILD_TIME=$(date) SAMPLE_TEXT=\"sample text\""
+
+          # Testing Python package independently of CMake / CTest seems hard
+          # Can probably use ctest as we install it from setuptools / pyproject.toml
+          # CIBW_BEFORE_TEST_LINUX: share/ci/scripts/linux/yum/install_tests_env.sh
+          # CIBW_BEFORE_TEST_MACOS: share/ci/scripts/macos/install_tests_env.sh
+          # CIBW_BEFORE_TEST_WINDOWS: share/ci/scripts/windows/install_tests_env.sh
+          # No test were found!!
+          # CIBW_TEST_COMMAND: ctest -V
+
+          # We need to prepare the environment for documentation, note that the
+          # python package are not used as the wheel is built in it's own
+          # isolated environment, hence python package are listed in pyproject.toml
+          CIBW_BEFORE_BUILD_LINUX: share/ci/scripts/linux/yum/install_docs_env.sh
+          CIBW_BEFORE_BUILD_MACOS: share/ci/scripts/macos/install_docs_env.sh
+          CIBW_BEFORE_BUILD_WINDOWS: bash -c share/ci/scripts/windows/install_docs_env.sh
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./wheelhouse/*.whl
+
+
+  upload_pypi:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    # upload to PyPI on every tag starting with 'v'
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    # alternatively, to publish when a GitHub Release is created, use the following rule:
+    # if: github.event_name == 'release' && github.event.action == 'published'
+    steps:
+      - uses: actions/setup-python@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: artifact
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          # NOTE: Dev PyPi for testing
+          repository_url: https://test.pypi.org/legacy/

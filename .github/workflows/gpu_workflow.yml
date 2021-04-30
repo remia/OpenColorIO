@@ -13,9 +13,13 @@ on:
       - RB-0.*
       - RB-1.*
       - gh-pages
+      # Temporary wheel test
+      - '**'
     tags-ignore:
       - v0.*
       - v1.*
+      # Temporary wheel test
+      - '**'
 
 jobs:
   # ---------------------------------------------------------------------------

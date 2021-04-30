@@ -179,6 +179,11 @@ if(NOT pybind11_FOUND)
                 ${pybind11_CMAKE_ARGS} -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
         endif()
 
+        if(${Python_EXECUTABLE})
+            set(pybind11_CMAKE_ARGS
+                ${pybind11_CMAKE_ARGS} -DPYTHON_EXECUTABLE=${Python_EXECUTABLE})
+        endif()
+
         ExternalProject_Add(pybind11_install
             GIT_REPOSITORY "https://github.com/pybind/pybind11.git"
             GIT_TAG "v${pybind11_FIND_VERSION}"
