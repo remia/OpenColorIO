@@ -268,6 +268,13 @@ jobs:
       - name: Test
         run: ctest -V
         working-directory: _build
+      - name: Test CMake Consumer
+        run: |
+          mkdir _build
+          cmake -S . -B _build -DCMAKE_PREFIX_PATH=../../../_install
+          cmake --build _build
+          ./_build/consumer
+        working-directory: _build/tests/cmake-consumer-dist
 
   # ---------------------------------------------------------------------------
   # macOS
@@ -390,6 +397,13 @@ jobs:
       - name: Test
         run: ctest -V
         working-directory: _build
+      - name: Test CMake Consumer
+        run: |
+          mkdir _build
+          cmake -S . -B _build -DCMAKE_PREFIX_PATH=../../../_install
+          cmake --build _build
+          ./_build/consumer
+        working-directory: _build/tests/cmake-consumer-dist
 
   # ---------------------------------------------------------------------------
   # Windows
@@ -518,3 +532,11 @@ jobs:
         run: ctest -V
         shell: bash
         working-directory: _build
+      - name: Test CMake Consumer
+        run: |
+          mkdir _build
+          cmake -S . -B _build -DCMAKE_PREFIX_PATH=../../../_install
+          cmake --build _build
+          ./_build/consumer
+        shell: bash
+        working-directory: _build/tests/cmake-consumer-dist
