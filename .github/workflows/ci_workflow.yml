@@ -35,6 +35,9 @@ jobs:
   # jobs. This workflow tries to utilize (but not exceed) that budget to 
   # promote timely CI.
 
+  # Don't run twice when a pull_request source branch lives onto the same repository
+  if: github.event_name == ‘push’ || github.event.pull_request.head.repo.full_name != github.repository
+
   # ---------------------------------------------------------------------------
   # Linux
   # ---------------------------------------------------------------------------
@@ -47,6 +50,8 @@ jobs:
        sse=${{ matrix.use-sse }}, 
        cxx=${{ matrix.cxx-standard }}, 
        docs=${{ matrix.build-docs }}>'
+    # Don't run twice when a pull_request source branch lives onto the same repository
+    if: github.event_name == ‘push’ || github.event.pull_request.head.repo.full_name != github.repository
     # GH-hosted VM. The build runs in CentOS 7 'container' defined below.
     runs-on: ubuntu-latest
     container:
@@ -293,6 +298,8 @@ jobs:
        cxx=${{ matrix.cxx-standard }}, 
        python=${{ matrix.python-version }}, 
        docs=${{ matrix.build-docs }}>'
+    # Don't run twice when a pull_request source branch lives onto the same repository
+    if: github.event_name == ‘push’ || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: macos-10.15
     strategy:
       matrix:
@@ -427,6 +434,8 @@ jobs:
        cxx=${{ matrix.cxx-standard }}, 
        python=${{ matrix.python-version }}, 
        docs=${{ matrix.build-docs }}>'
+    # Don't run twice when a pull_request source branch lives onto the same repository
+    if: github.event_name == ‘push’ || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: windows-2019
     strategy:
       matrix:
