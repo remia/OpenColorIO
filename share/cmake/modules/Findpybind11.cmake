@@ -157,6 +157,9 @@ if(NOT pybind11_FOUND AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
             -DCMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE}
             -DCMAKE_INSTALL_PREFIX=${_EXT_DIST_ROOT}
             -DCMAKE_OBJECT_PATH_MAX=${CMAKE_OBJECT_PATH_MAX}
+            -DPYTHON_EXECUTABLE=${Python_EXECUTABLE}
+            # -DPython_EXECUTABLE=${Python_EXECUTABLE}
+            # -DPYBIND11_FINDPYTHON=ON
             -DPYBIND11_INSTALL=ON
             -DPYBIND11_TEST=OFF
         )
@@ -167,8 +170,13 @@ if(NOT pybind11_FOUND AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
         endif()
 
         if(APPLE)
+            string(REPLACE ";" "\\\\\\\\\\\\\;" ESCAPED_CMAKE_OSX_ARCHITECTURES "${CMAKE_OSX_ARCHITECTURES}")
+
             set(pybind11_CMAKE_ARGS
-                ${pybind11_CMAKE_ARGS} -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
+                ${pybind11_CMAKE_ARGS}
+                -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+                -DCMAKE_OSX_ARCHITECTURES=${ESCAPED_CMAKE_OSX_ARCHITECTURES}
+            )
         endif()
 
         ExternalProject_Add(pybind11_install
