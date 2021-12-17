@@ -168,7 +168,10 @@ if(NOT pybind11_FOUND AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
 
         if(APPLE)
             set(pybind11_CMAKE_ARGS
-                ${pybind11_CMAKE_ARGS} -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
+                ${pybind11_CMAKE_ARGS}
+                -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+                -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+            )
         endif()
 
         ExternalProject_Add(pybind11_install

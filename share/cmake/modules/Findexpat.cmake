@@ -228,7 +228,10 @@ if(NOT expat_FOUND AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
 
         if(APPLE)
             set(EXPAT_CMAKE_ARGS
-                ${EXPAT_CMAKE_ARGS} -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
+                ${EXPAT_CMAKE_ARGS}
+                -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+                -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+            )
         endif()
 
         # Hack to let imported target be built from ExternalProject_Add
