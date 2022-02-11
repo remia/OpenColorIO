@@ -21,6 +21,7 @@ on:
     paths:
       - .github/workflows/wheel_workflow.yml
       - pyproject.toml
+      - setup.py
   schedule:
     # Nightly build
     - cron: "0 0 * * *"
@@ -249,7 +250,7 @@ jobs:
           python-version: '3.8'
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.1.2
+        uses: pypa/cibuildwheel@v2.3.1
         env:
           CIBW_BUILD: ${{ matrix.python }}
           CIBW_ARCHS: ${{ matrix.arch }}
