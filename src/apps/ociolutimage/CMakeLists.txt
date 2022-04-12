@@ -13,8 +13,8 @@ set_target_properties(ociolutimage PROPERTIES
 target_link_libraries(ociolutimage
 	PRIVATE
 		apputils
+		imageioapphelpers
 		OpenColorIO
-		OpenImageIO::OpenImageIO
 		utils::strings
 )
 

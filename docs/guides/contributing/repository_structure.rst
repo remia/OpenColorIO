@@ -112,8 +112,7 @@ following subdirectories:
   this work is welcome and appreciated).
 
 - **libutils**: Supplementary and example helper libraries for integrating 
-  OpenColorIO into applications. Utilities for using OCIO with OpenGL and 
-  OpenImageIO are included.
+  OpenColorIO into applications. Utility for using OCIO with OpenGL is included.
   
 - **utils**: Common header-only utilities shared by the core OpenColorIO 
   library and the other utility sources.

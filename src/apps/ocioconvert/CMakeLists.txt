@@ -14,16 +14,16 @@ set(SOURCES
 
 add_executable(ocioconvert ${SOURCES})
 
-set_target_properties(ocioconvert PROPERTIES 
-    COMPILE_FLAGS "${PLATFORM_COMPILE_FLAGS}")
+set_target_properties(ocioconvert PROPERTIES
+    COMPILE_FLAGS "${PLATFORM_COMPILE_FLAGS}"
+)
 
 target_link_libraries(ocioconvert
     PRIVATE
-        apputils
         ${OCIO_GL_LIB}
-        oiiohelpers
+        apputils
+        imageioapphelpers
         OpenColorIO
-        OpenImageIO::OpenImageIO
 )
 
 install(TARGETS ocioconvert

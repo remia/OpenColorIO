@@ -71,7 +71,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 17
             cxx-compiler: clang++
             cc-compiler: clang
@@ -84,7 +83,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'OFF'
-            use-openexr-half: 'OFF'
             cxx-standard: 17
             cxx-compiler: g++
             cc-compiler: gcc
@@ -97,7 +95,6 @@ jobs:
             build-docs: 'ON'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 14
             cxx-compiler: g++
             cc-compiler: gcc
@@ -110,7 +107,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 11
             cxx-compiler: g++
             cc-compiler: gcc
@@ -126,7 +122,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'ON'
             cxx-standard: 17
             cxx-compiler: clang++
             cc-compiler: clang
@@ -139,7 +134,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'OFF'
-            use-openexr-half: 'ON'
             cxx-standard: 14
             cxx-compiler: clang++
             cc-compiler: clang
@@ -152,7 +146,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'ON'
             cxx-standard: 11
             cxx-compiler: g++
             cc-compiler: gcc
@@ -168,7 +161,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'OFF'
-            use-openexr-half: 'ON'
             cxx-standard: 14
             cxx-compiler: clang++
             cc-compiler: clang
@@ -181,7 +173,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'ON'
-            use-openexr-half: 'ON'
             cxx-standard: 14
             cxx-compiler: g++
             cc-compiler: gcc
@@ -194,7 +185,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'ON'
             cxx-standard: 11
             cxx-compiler: g++
             cc-compiler: gcc
@@ -211,7 +201,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'ON'
             cxx-standard: 11
             cxx-compiler: clang++
             cc-compiler: clang
@@ -225,7 +214,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'OFF'
-            use-openexr-half: 'ON'
             cxx-standard: 11
             cxx-compiler: clang++
             cc-compiler: clang
@@ -239,7 +227,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'ON'
-            use-openexr-half: 'ON'
             cxx-standard: 11
             cxx-compiler: g++
             cc-compiler: gcc
@@ -271,7 +258,6 @@ jobs:
                 -DOCIO_BUILD_OPENFX=${{ matrix.build-openfx }} \
                 -DOCIO_BUILD_GPU_TESTS=OFF \
                 -DOCIO_USE_SSE=${{ matrix.use-sse }} \
-                -DOCIO_USE_OPENEXR_HALF=${{ matrix.use-openexr-half }} \
                 -DOCIO_INSTALL_EXT_PACKAGES=ALL \
                 -DOCIO_WARNING_AS_ERROR=ON \
                 -DPython_EXECUTABLE=$(which python)
@@ -326,7 +312,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 17
             python-version: 3.9
           # C++11, Python 3.7
@@ -336,7 +321,6 @@ jobs:
             build-docs: 'ON'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 11
             python-version: 3.7
           # Debug, OpenFX
@@ -346,7 +330,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 11
             python-version: 3.7
           # C++14, OpenEXR, OpenFX
@@ -356,7 +339,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'ON'
-            use-openexr-half: 'ON'
             cxx-standard: 14
             python-version: 3.7
           # Static, no SSE
@@ -366,7 +348,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'OFF'
-            use-openexr-half: 'OFF'
             cxx-standard: 11
             python-version: 3.7
           # Python 2.7
@@ -377,7 +358,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 11
             python-version: 2.7
     steps:
@@ -407,7 +387,6 @@ jobs:
                 -DOCIO_BUILD_OPENFX=${{ matrix.build-openfx }} \
                 -DOCIO_BUILD_GPU_TESTS=OFF \
                 -DOCIO_USE_SSE=${{ matrix.use-sse }} \
-                -DOCIO_USE_OPENEXR_HALF=${{ matrix.use-openexr-half }} \
                 -DOCIO_INSTALL_EXT_PACKAGES=ALL \
                 -DOCIO_WARNING_AS_ERROR=ON \
                 -DPython_EXECUTABLE=$(which python)
@@ -464,7 +443,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 17
             python-version: 3.9
           # C++11, Python 3.7
@@ -474,7 +452,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 11
             python-version: 3.7
           # Debug
@@ -484,7 +461,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 11
             python-version: 3.7
           # C++14, OpenEXR, OpenFX
@@ -494,7 +470,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'ON'
-            use-openexr-half: 'ON'
             cxx-standard: 14
             python-version: 3.7
           # Static, no SSE, OpenFX
@@ -504,7 +479,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'ON'
             use-sse: 'OFF'
-            use-openexr-half: 'OFF'
             cxx-standard: 11
             python-version: 3.7
           # Python 2.7
@@ -515,7 +489,6 @@ jobs:
             build-docs: 'OFF'
             build-openfx: 'OFF'
             use-sse: 'ON'
-            use-openexr-half: 'OFF'
             cxx-standard: 11
             python-version: 2.7
     steps:
@@ -549,7 +522,6 @@ jobs:
                 -DOCIO_BUILD_OPENFX=${{ matrix.build-openfx }} \
                 -DOCIO_BUILD_GPU_TESTS=OFF \
                 -DOCIO_USE_SSE=${{ matrix.use-sse }} \
-                -DOCIO_USE_OPENEXR_HALF=${{ matrix.use-openexr-half }} \
                 -DOCIO_INSTALL_EXT_PACKAGES=ALL \
                 -DOCIO_WARNING_AS_ERROR=ON \
                 -DPython_EXECUTABLE=$(which python)

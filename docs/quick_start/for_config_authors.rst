@@ -9,8 +9,7 @@ Quick Start for Config Authors
 
 Get started by following the :ref:`installation` instructions.  Note that if
 you want to try out the new OpenColorIO v2 features, you'll need to build
-from source.  You will want to make sure to build the command-line tools, so 
-you should install OpenImageIO before building.
+from source.
 
 Grab the available configuration files (and the sample images, if you want) from
 :ref:`downloads` so you'll have some examples to study.

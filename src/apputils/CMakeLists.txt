@@ -2,25 +2,21 @@
 # Copyright Contributors to the OpenColorIO Project.
 
 set(SOURCES
-	argparse.cpp
-	imageio.cpp
-	strutil.cpp
+    argparse.cpp
+    strutil.cpp
 )
 
 add_library(apputils STATIC ${SOURCES})
 
 target_include_directories(apputils 
-	PUBLIC 
-		${CMAKE_CURRENT_SOURCE_DIR}/..
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 target_link_libraries(apputils
     PRIVATE
-		OpenColorIO
-		IlmBase::Half
-		IlmBase::Imath
-		OpenEXR::IlmImf
-		pystring::pystring
+        OpenColorIO
+        pystring::pystring
 )
 
 set_target_properties(apputils PROPERTIES 

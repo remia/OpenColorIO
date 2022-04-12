@@ -6,9 +6,7 @@ if(NOT OCIO_GL_ENABLED)
     return()
 endif()
 
-set(SOURCES
-    main.cpp
-)
+set(SOURCES main.cpp)
 
 add_executable(ociodisplay ${SOURCES})
 
@@ -19,24 +17,28 @@ if(APPLE)
 endif()
 
 set_target_properties(ociodisplay PROPERTIES 
-	COMPILE_FLAGS "${CUSTOM_COMPILE_FLAGS}")
+    COMPILE_FLAGS "${CUSTOM_COMPILE_FLAGS}"
+)
 
 target_include_directories(ociodisplay 
-	SYSTEM
-	PRIVATE
-		${GLEW_INCLUDE_DIRS}
-		${GLUT_INCLUDE_DIR}
-		${OPENGL_INCLUDE_DIR}
+    SYSTEM
+    PRIVATE
+        ${GLEW_INCLUDE_DIRS}
+        ${GLUT_INCLUDE_DIR}
+        ${OPENGL_INCLUDE_DIR}
 )
+
 target_link_libraries(ociodisplay
-	PRIVATE 
-		${GLEW_LIBRARIES}
-		${GLUT_LIBRARIES}
-		oglapphelpers
-		OpenColorIO
-		${OPENGL_LIBRARIES}
-		OpenImageIO::OpenImageIO
+    PRIVATE
+        ${GLEW_LIBRARIES}
+        ${GLUT_LIBRARIES}
+        ${OPENGL_LIBRARIES}
+        apputils
+        imageioapphelpers
+        oglapphelpers
+        OpenColorIO
 )
+
 install(TARGETS ociodisplay
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

@@ -36,25 +36,9 @@ find_package(yaml-cpp 0.7.0 REQUIRED)
 # https://github.com/imageworks/pystring
 find_package(pystring 1.1.3 REQUIRED)
 
-# Half
-# NOTE: OCIO_USE_IMATH_HALF needs to be an integer for use in utils/Half.h.in
-if(NOT OCIO_USE_OPENEXR_HALF)
-
-    # Imath (>=3.0)
-    # https://github.com/AcademySoftwareFoundation/Imath
-    find_package(Imath 3.1.2 REQUIRED)
-    
-    set(OCIO_HALF_LIB Imath::Imath CACHE STRING "Half library target" FORCE)
-    set(OCIO_USE_IMATH_HALF "1" CACHE STRING "Whether 'half' type will be sourced from the Imath library (>=v3.0)" FORCE)
-else()
-
-    # OpenEXR/IlmBase (<=2.5)
-    # https://github.com/AcademySoftwareFoundation/openexr
-    find_package(Half 2.4.0 REQUIRED)
-
-    set(OCIO_HALF_LIB IlmBase::Half CACHE STRING "Half library target" FORCE)
-    set(OCIO_USE_IMATH_HALF "0" CACHE STRING "Whether 'half' type will be sourced from the Imath library (>=v3.0)" FORCE)
-endif()
+# Imath (>=3.1)
+# https://github.com/AcademySoftwareFoundation/Imath
+find_package(Imath 3.1.5 REQUIRED)
 
 if(OCIO_BUILD_APPS)
 
@@ -104,13 +88,13 @@ if(OCIO_BUILD_PYTHON OR OCIO_BUILD_DOCS)
     endif()
 endif()
 
-# The presence of OpenImageIO allows additional OCIO apps and the OSL
-# translation unit tests to be built.
+# The presence of OpenImageIO or OpenEXR allows additional OCIO apps to be built.
 
 if(OCIO_BUILD_APPS OR OCIO_BUILD_TESTS)
+    # Try to use OpenImageIO first as it supports more formats.
+
     # OpenImageIO
     # https://github.com/OpenImageIO/oiio
-
     set(OIIO_VERSION "2.1.9")
 
     if(OCIO_USE_OIIO_CMAKE_CONFIG)
@@ -118,6 +102,23 @@ if(OCIO_BUILD_APPS OR OCIO_BUILD_TESTS)
     else()
         find_package(OpenImageIO ${OIIO_VERSION})
     endif()
+
+    if(OpenImageIO_FOUND AND TARGET OpenImageIO::OpenImageIO)
+        add_library(OpenColorIO::ImageIOBackend ALIAS OpenImageIO::OpenImageIO)
+        set(OCIO_IMAGE_BACKEND OpenImageIO)
+    else()
+        # OpenEXR
+        # https://github.com/AcademySoftwareFoundation/openexr
+        find_package(OpenEXR 3.1.5)
+
+        if(TARGET OpenEXR::OpenEXR)
+            add_library(OpenColorIO::ImageIOBackend ALIAS OpenEXR::OpenEXR)
+            set(OCIO_IMAGE_BACKEND OpenEXR)
+        endif()
+    endif()
+
+    message(STATUS "Using ${OCIO_IMAGE_BACKEND} image backend to build additional apps.")
+
 endif()
 
 # Check dependencies for OSL unit test framework (i.e. OpenImageIO and Imath) before looking

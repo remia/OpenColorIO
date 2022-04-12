@@ -126,6 +126,7 @@ endif()
 
 if (NOT TARGET Imath::Imath)
     add_library(Imath::Imath UNKNOWN IMPORTED GLOBAL)
+    add_library(Imath::ImathConfig INTERFACE IMPORTED GLOBAL)
     set(_Imath_TARGET_CREATE TRUE)
 endif()
 
@@ -179,6 +180,7 @@ if(NOT Imath_FOUND AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
             -DBUILD_SHARED_LIBS=OFF
             -DBUILD_TESTING=OFF
             -DPYTHON=OFF
+            -DDOCS=OFF
             -DIMATH_HALF_USE_LOOKUP_TABLE=OFF
         )
 
@@ -227,9 +229,6 @@ if(NOT Imath_FOUND AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
 
         add_dependencies(Imath::Imath imath_install)
 
-        # Some Imath versions define a second target. 
-        add_library(Imath::ImathConfig ALIAS Imath::Imath)
-
         message(STATUS "Installing Imath: ${Imath_LIBRARY} (version \"${Imath_VERSION}\")")
     endif()
 endif()
@@ -238,9 +237,14 @@ endif()
 ### Configure target ###
 
 if(_Imath_TARGET_CREATE)
+    file(MAKE_DIRECTORY ${Imath_INCLUDE_DIR}/Imath)
+
     set_target_properties(Imath::Imath PROPERTIES
         IMPORTED_LOCATION ${Imath_LIBRARY}
-        INTERFACE_INCLUDE_DIRECTORIES ${Imath_INCLUDE_DIR}
+        INTERFACE_INCLUDE_DIRECTORIES "${Imath_INCLUDE_DIR};${Imath_INCLUDE_DIR}/Imath"
+    )
+    set_target_properties(Imath::ImathConfig PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${Imath_INCLUDE_DIR};${Imath_INCLUDE_DIR}/Imath"
     )
 
     mark_as_advanced(Imath_INCLUDE_DIR Imath_LIBRARY Imath_VERSION)
