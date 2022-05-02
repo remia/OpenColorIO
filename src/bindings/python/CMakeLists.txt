@@ -205,6 +205,7 @@ target_include_directories(PyOpenColorIO
 #   https://pybind11.readthedocs.io/en/stable/compiling.html#building-manually
 
 if (WIN32)
+	message(STATUS "Python link to ${Python_LIBRARIES}")
 	set(_PublicLibs ${Python_LIBRARIES})
 endif()
 

@@ -563,7 +563,12 @@ jobs:
         shell: bash
         working-directory: _build
       - name: Test
-        run: ctest -V -C ${{ matrix.build-type }}
+        run: |
+          echo $PATH
+          echo $PWD
+          ls -lR .
+          ls -Rl ../_install
+          ctest -V -C ${{ matrix.build-type }}
         shell: bash
         working-directory: _build
       - name: Test CMake Consumer

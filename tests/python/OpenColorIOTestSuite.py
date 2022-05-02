@@ -26,9 +26,10 @@ if len(sys.argv) > 1:
             opencolorio_dir = os.path.join(opencolorio_dir, sys.argv[2])
             pyopencolorio_dir = os.path.join(pyopencolorio_dir, sys.argv[2])
 
-        # Python 3.8+ does no longer look for DLLs in PATH environment variable
+        # Python 3.8+ no longer looks for DLLs in PATH environment variable
         if hasattr(os, 'add_dll_directory'):
             os.add_dll_directory(opencolorio_dir)
+            print("Add DLL directory: {}".format(opencolorio_dir))
         else:
             os.environ['PATH'] = '{0};{1}'.format(
                 opencolorio_dir, os.getenv('PATH', ''))
@@ -38,6 +39,8 @@ if len(sys.argv) > 1:
             opencolorio_dir, os.getenv('DYLD_LIBRARY_PATH', ''))
 
     sys.path.insert(0, pyopencolorio_dir)
+    print("Add sys directory: {}".format(pyopencolorio_dir))
+    print("Sys directories: {}".format(sys.path))
 # Else it probably means direct invocation from installed package
 else:
     here = os.path.dirname(__file__)

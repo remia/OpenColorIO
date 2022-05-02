@@ -269,7 +269,7 @@ jobs:
        docs=${{ matrix.build-docs }}, 
        python=${{ matrix.python-version }}>'
     # Don't run on OCIO forks
-    if: github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+    # if: github.repository == 'AcademySoftwareFoundation/OpenColorIO'
     runs-on: windows-latest
     strategy:
       matrix:
@@ -342,8 +342,8 @@ jobs:
         shell: bash
       - name: Create build directories
         run: |
-          mkdir _install
           mkdir _build
+          mkdir _install
         shell: bash
       - name: Configure
         run: |
@@ -358,7 +358,6 @@ jobs:
                 -DOCIO_INSTALL_EXT_PACKAGES=NONE \
                 -DOCIO_WARNING_AS_ERROR=OFF \
                 -DPython_EXECUTABLE=$(which python) \
-                -DOCIO_BUILD_PYTHON=OFF \
                 -DOCIO_USE_OIIO_CMAKE_CONFIG=ON
         shell: bash
         working-directory: _build
@@ -367,11 +366,20 @@ jobs:
           cmake --build . \
                 --target install \
                 --config Release \
-                --parallel
+                --parallel \
+                -v
         shell: bash
         working-directory: _build
       - name: Test
         run: |
+          echo $GITHUB_PATH
+          echo $PATH
+          echo $PWD
+          ls -lR .
+          ls -lR /c/vcpkg/installed/x64-windows/bin
+          ls -Rl ../_install
+          file ../_install/bin/OpenColorIO_2_2.dll
+          ldd ../_install/bin/OpenColorIO_2_2.dll
           ctest -V -C Release
         shell: bash
         working-directory: _build
