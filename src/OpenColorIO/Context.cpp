@@ -181,7 +181,7 @@ const char * Context::getCacheID() const
         }
 
         std::string fullstr = cacheid.str();
-        getImpl()->m_cacheID = CacheIDHash(fullstr.c_str(), (int)fullstr.size());
+        getImpl()->m_cacheID = CacheIDHash(fullstr.c_str(), fullstr.size());
     }
 
     return getImpl()->m_cacheID.c_str();
@@ -571,4 +571,3 @@ void GetAbsoluteSearchPaths(StringUtils::StringVec & searchpaths,
 } // anon.
 
 } // namespace OCIO_NAMESPACE
-

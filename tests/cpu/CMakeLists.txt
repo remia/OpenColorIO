@@ -23,6 +23,7 @@ function(add_ocio_test NAME SOURCES PRIVATE_INCLUDES)
             utils::strings
             yaml-cpp
             testutils
+            xxHash
     )
 
     if(APPLE)
@@ -89,7 +90,6 @@ set(SOURCES
     ImageDesc.cpp
     ImagePacking.cpp
     Look.cpp
-    md5/md5.cpp
     OCIOYaml.cpp
     ops/cdl/CDLOpCPU.cpp
     ops/cdl/CDLOpGPU.cpp
