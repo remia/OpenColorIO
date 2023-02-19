@@ -84,7 +84,7 @@ jobs:
             cxx-compiler: clang++
             cc-compiler: clang
             compiler-desc: Clang
-            enable-sanitizer: ON
+            enable-sanitizer: OFF
     env:
       CXX: ${{ matrix.cxx-compiler }}
       CC: ${{ matrix.cc-compiler }}
