@@ -70,9 +70,9 @@ if(USE_GCC OR USE_CLANG)
     if(OCIO_ENABLE_SANITIZER)
         set(PLATFORM_COMPILE_OPTIONS "${PLATFORM_COMPILE_OPTIONS};-fno-omit-frame-pointer;-fsanitize=address")
 
-        if(USE_CLANG)
-            set(PLATFORM_COMPILE_OPTIONS "${PLATFORM_COMPILE_OPTIONS};-mllvm;-asan-use-private-alias=1")
-        endif()
+        # if(USE_CLANG)
+        #     set(PLATFORM_COMPILE_OPTIONS "${PLATFORM_COMPILE_OPTIONS};-mllvm;-asan-use-private-alias=1")
+        # endif()
 
         set(PLATFORM_LINK_OPTIONS "${PLATFORM_LINK_OPTIONS};-fsanitize=address")
     endif()

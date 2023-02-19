@@ -74,9 +74,12 @@ function(add_ocio_test NAME SOURCES PRIVATE_INCLUDES)
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_BINARY})
 
     if(OCIO_ENABLE_SANITIZER)
+        # Ignore odr-violation warning coming supposeddly from compiling OCIO
+        # sources within the test target as well as linking to the library.
+        # Provide better stack traces for malloc related leaks.
         set_tests_properties(${TEST_NAME} PROPERTIES
             ENVIRONMENT
-                "ASAN_OPTIONS=ASAN_OPTIONS=fast_unwind_on_malloc=0"
+                "ASAN_OPTIONS=detect_odr_violation=0;ASAN_OPTIONS=fast_unwind_on_malloc=0"
         )
     endif()
 endfunction(add_ocio_test)
