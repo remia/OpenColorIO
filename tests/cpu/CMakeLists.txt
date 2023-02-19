@@ -75,7 +75,8 @@ function(add_ocio_test NAME SOURCES PRIVATE_INCLUDES)
 
     if(OCIO_ENABLE_SANITIZER)
         set_tests_properties(${TEST_NAME} PROPERTIES
-            ENVIRONMENT ASAN_OPTIONS=detect_odr_violation=0
+            ENVIRONMENT
+                "ASAN_OPTIONS=detect_odr_violation=0;ASAN_OPTIONS=fast_unwind_on_malloc=0"
         )
     endif()
 endfunction(add_ocio_test)
