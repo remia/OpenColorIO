@@ -79,7 +79,7 @@ function(add_ocio_test NAME SOURCES PRIVATE_INCLUDES)
         # Provide better stack traces for malloc related leaks.
         set_tests_properties(${TEST_NAME} PROPERTIES
             ENVIRONMENT
-                "ASAN_OPTIONS=detect_odr_violation=0;ASAN_OPTIONS=fast_unwind_on_malloc=0"
+                "ASAN_OPTIONS=detect_odr_violation=0:fast_unwind_on_malloc=0"
         )
     endif()
 endfunction(add_ocio_test)
