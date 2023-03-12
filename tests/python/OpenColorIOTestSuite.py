@@ -42,6 +42,7 @@ if len(sys.argv) > 1:
         os.environ['DYLD_LIBRARY_PATH'] = '{0}:{1}'.format(
             opencolorio_dir, os.getenv('DYLD_LIBRARY_PATH', ''))
 
+    list_files(os.path.dirname(pyopencolorio_dir))
     list_files(pyopencolorio_dir)
     sys.path.insert(0, pyopencolorio_dir)
 # Else it probably means direct invocation from installed package
