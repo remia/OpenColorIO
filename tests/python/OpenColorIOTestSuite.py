@@ -41,7 +41,7 @@ if len(sys.argv) > 1:
 # Else it probably means direct invocation from installed package
 else:
     here = os.path.dirname(__file__)
-    os.environ["TEST_DATAFILES_DIR"] = os.path.join(here, 'data', 'files')
+    os.environ["TEST_DATAFILES_DIR"] = os.path.join(os.path.dirname(here), 'data', 'files')
     sys.path.insert(0, here)
 
 import PyOpenColorIO as OCIO

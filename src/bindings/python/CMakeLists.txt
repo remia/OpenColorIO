@@ -183,10 +183,10 @@ if (UNIX AND NOT CMAKE_SKIP_RPATH)
     # dynamic library based on the default installation directory structure.
     if (APPLE)
         set_target_properties(PyOpenColorIO PROPERTIES
-            INSTALL_RPATH "@loader_path/../..;${CMAKE_INSTALL_RPATH}")
+            INSTALL_RPATH "@loader_path/../../..;${CMAKE_INSTALL_RPATH}")
     else()
         set_target_properties(PyOpenColorIO PROPERTIES
-            INSTALL_RPATH "$ORIGIN/../..;${CMAKE_INSTALL_RPATH}")
+            INSTALL_RPATH "$ORIGIN/../../..;${CMAKE_INSTALL_RPATH}")
     endif()
 endif()
 
@@ -241,8 +241,19 @@ set(PYTHON_VARIANT_PATH ${_Python_VARIANT_PATH} CACHE INTERNAL "")
 # Set to PyOpenColorIO site-package location.
 set(_PyOpenColorIO_SITE_PACKAGE_DIR "${PYTHON_VARIANT_PATH}/PyOpenColorIO")
 
+# Make sure build layout mirrors the installation, using PyOpenColorIO folder
+# and __init__.py file. When building the Python wheel, do not override the
+# target directory.
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+	set_target_properties(PyOpenColorIO PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/PyOpenColorIO"
+	)
+endif()
+
+file(COPY package/__init__.py DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/PyOpenColorIO")
+
 install(TARGETS PyOpenColorIO
     LIBRARY DESTINATION ${_PyOpenColorIO_SITE_PACKAGE_DIR}
 )
 
-install(FILES __init__.py DESTINATION ${_PyOpenColorIO_SITE_PACKAGE_DIR})
+install(FILES package/__init__.py DESTINATION ${_PyOpenColorIO_SITE_PACKAGE_DIR})

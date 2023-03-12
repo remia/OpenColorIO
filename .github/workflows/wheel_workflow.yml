@@ -45,9 +45,9 @@ jobs:
     name: Build SDist
     runs-on: ubuntu-latest
     # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+    # if: |
+    #   github.event_name != 'schedule' ||
+    #   github.repository == 'AcademySoftwareFoundation/OpenColorIO'
 
     steps:
 
@@ -71,9 +71,9 @@ jobs:
     name: Build wheels on Linux
     runs-on: ubuntu-latest
     # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+    # if: |
+    #   github.event_name != 'schedule' ||
+    #   github.repository == 'AcademySoftwareFoundation/OpenColorIO'
     strategy:
       matrix:
         include:
@@ -98,21 +98,21 @@ jobs:
           # -------------------------------------------------------------------
           # CPython ARM 64 bits
           # -------------------------------------------------------------------
-          - build: CPython 3.7 ARM 64 bits
-            python: cp37-manylinux*
-            arch: aarch64
-          - build: CPython 3.8 ARM 64 bits
-            python: cp38-manylinux*
-            arch: aarch64
-          - build: CPython 3.9 ARM 64 bits
-            python: cp39-manylinux*
-            arch: aarch64
-          - build: CPython 3.10 ARM 64 bits
-            python: cp310-manylinux*
-            arch: aarch64
-          - build: CPython 3.11 ARM 64 bits
-            python: cp311-manylinux*
-            arch: aarch64
+          # - build: CPython 3.7 ARM 64 bits
+          #   python: cp37-manylinux*
+          #   arch: aarch64
+          # - build: CPython 3.8 ARM 64 bits
+          #   python: cp38-manylinux*
+          #   arch: aarch64
+          # - build: CPython 3.9 ARM 64 bits
+          #   python: cp39-manylinux*
+          #   arch: aarch64
+          # - build: CPython 3.10 ARM 64 bits
+          #   python: cp310-manylinux*
+          #   arch: aarch64
+          # - build: CPython 3.11 ARM 64 bits
+          #   python: cp311-manylinux*
+          #   arch: aarch64
 
     steps:
       - uses: actions/checkout@v3
@@ -145,9 +145,9 @@ jobs:
     name: Build wheels on macOS
     runs-on: macos-11
     # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+    # if: |
+    #   github.event_name != 'schedule' ||
+    #   github.repository == 'AcademySoftwareFoundation/OpenColorIO'
     strategy:
       matrix:
         include:
@@ -211,9 +211,9 @@ jobs:
     name: Build wheels on Windows
     runs-on: windows-2019
     # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+    # if: |
+    #   github.event_name != 'schedule' ||
+    #   github.repository == 'AcademySoftwareFoundation/OpenColorIO'
     strategy:
       matrix:
         include:
@@ -258,7 +258,7 @@ jobs:
   upload_pypi:
     needs: [sdist, linux, macos, windows]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    # if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
     steps:
       - uses: actions/setup-python@v4
 
@@ -271,3 +271,4 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
