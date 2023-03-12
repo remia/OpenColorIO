@@ -11,6 +11,15 @@ logging.basicConfig(
     format="[%(levelname)s] %(name)s: %(message)s",
 )
 
+def list_files(startpath):
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * (level)
+        print('{}{}/'.format(indent, os.path.basename(root)))
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            print('{}{}'.format(subindent, f))
+
 # We are called from CTest if called with arguments (build_tree, build_type)
 if len(sys.argv) > 1:
     build_location = sys.argv[1]
@@ -26,17 +35,14 @@ if len(sys.argv) > 1:
             opencolorio_dir = os.path.join(opencolorio_dir, sys.argv[2])
             pyopencolorio_dir = os.path.join(pyopencolorio_dir, sys.argv[2])
 
-        # Python 3.8+ does no longer look for DLLs in PATH environment variable
-        if hasattr(os, 'add_dll_directory'):
-            os.add_dll_directory(opencolorio_dir)
-        else:
-            os.environ['PATH'] = '{0};{1}'.format(
-                opencolorio_dir, os.getenv('PATH', ''))
+        # PyOpenColorIO __init__.py file handle os.add_dll_directory()
+        os.environ['PATH'] = '{0};{1}'.format(opencolorio_dir, os.getenv('PATH', ''))
     elif sys.platform == 'darwin':
         # On OSX we must add the main library location to DYLD_LIBRARY_PATH
         os.environ['DYLD_LIBRARY_PATH'] = '{0}:{1}'.format(
             opencolorio_dir, os.getenv('DYLD_LIBRARY_PATH', ''))
 
+    list_files(pyopencolorio_dir)
     sys.path.insert(0, pyopencolorio_dir)
 # Else it probably means direct invocation from installed package
 else:
