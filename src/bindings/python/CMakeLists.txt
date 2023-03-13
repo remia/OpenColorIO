@@ -159,7 +159,7 @@ set_target_properties(PyOpenColorIO
 	PROPERTIES
 		COMPILE_OPTIONS "${CUSTOM_COMPILE_FLAGS}"
 		LINK_OPTIONS "${CUSTOM_LINK_FLAGS}"
-		CXX_STANDARD ${APP_CXX_STANDARD}
+		# CXX_STANDARD ${APP_CXX_STANDARD}
 )
 
 if(NOT BUILD_SHARED_LIBS)
@@ -240,7 +240,7 @@ if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
 	)
 endif()
 
-file(COPY package/__init__.py DESTINATION_PyOpenColorIO_BUILD_PACKAGE_DIR)
+file(COPY package/__init__.py DESTINATION "${_PyOpenColorIO_BUILD_PACKAGE_DIR}")
 
 # Install layout
 # Set to site-package location.
