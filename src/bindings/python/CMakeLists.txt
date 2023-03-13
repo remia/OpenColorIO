@@ -227,6 +227,7 @@ target_compile_definitions(PyOpenColorIO
 		PY_VERSION_PATCH=${Python_VERSION_PATCH}
 )
 
+###############################################################################
 # Build layout
 # Mirrors the installation, using PyOpenColorIO folder and __init__.py file.
 # When building the Python wheel, do not override the target directory.
@@ -235,13 +236,14 @@ if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
 	set_target_properties(PyOpenColorIO PROPERTIES
 		LIBRARY_OUTPUT_DIRECTORY "${_PyOpenColorIO_BUILD_PACKAGE_DIR}"
 		# For Windows compatibility
-		RUNTIME_OUTPUT_DIRECTORY_DEBUG "${_PyOpenColorIO_BUILD_PACKAGE_DIR}"
-		RUNTIME_OUTPUT_DIRECTORY_RELEASE "${_PyOpenColorIO_BUILD_PACKAGE_DIR}"
+		LIBRARY_OUTPUT_DIRECTORY_DEBUG "${_PyOpenColorIO_BUILD_PACKAGE_DIR}"
+		LIBRARY_OUTPUT_DIRECTORY_RELEASE "${_PyOpenColorIO_BUILD_PACKAGE_DIR}"
 	)
 endif()
 
 file(COPY package/__init__.py DESTINATION "${_PyOpenColorIO_BUILD_PACKAGE_DIR}")
 
+###############################################################################
 # Install layout
 # Set to site-package location.
 if(WIN32)
