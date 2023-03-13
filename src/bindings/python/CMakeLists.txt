@@ -131,12 +131,12 @@ if(WIN32)
 	)
 endif()
 
-# NOTE: Depending of the compiler version pybind11 2.4.3 does not compile with C++17 so revert to c++11
+# # NOTE: Depending of the compiler version pybind11 2.4.3 does not compile with C++17 so revert to c++11
 
-set(APP_CXX_STANDARD ${CMAKE_CXX_STANDARD})
-if(${CMAKE_CXX_STANDARD} GREATER_EQUAL 17)
-	set(APP_CXX_STANDARD 11)
-endif()
+# set(APP_CXX_STANDARD ${CMAKE_CXX_STANDARD})
+# if(${CMAKE_CXX_STANDARD} GREATER_EQUAL 17)
+# 	set(APP_CXX_STANDARD 11)
+# endif()
 
 set(CUSTOM_COMPILE_FLAGS ${PLATFORM_COMPILE_OPTIONS})
 set(CUSTOM_LINK_FLAGS ${PLATFORM_LINK_OPTIONS})
@@ -227,6 +227,22 @@ target_compile_definitions(PyOpenColorIO
 		PY_VERSION_PATCH=${Python_VERSION_PATCH}
 )
 
+# Build layout
+# Mirrors the installation, using PyOpenColorIO folder and __init__.py file.
+# When building the Python wheel, do not override the target directory.
+set(_PyOpenColorIO_BUILD_PACKAGE_DIR  "${CMAKE_CURRENT_BINARY_DIR}/PyOpenColorIO")
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+	set_target_properties(PyOpenColorIO PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY _PyOpenColorIO_BUILD_PACKAGE_DIR
+		# For Windows compatibility
+		RUNTIME_OUTPUT_DIRECTORY_DEBUG _PyOpenColorIO_BUILD_PACKAGE_DIR
+		RUNTIME_OUTPUT_DIRECTORY_RELEASE _PyOpenColorIO_BUILD_PACKAGE_DIR
+	)
+endif()
+
+file(COPY package/__init__.py DESTINATION_PyOpenColorIO_BUILD_PACKAGE_DIR)
+
+# Install layout
 # Set to site-package location.
 if(WIN32)
     set(_Python_VARIANT_PATH "${CMAKE_INSTALL_LIBDIR}/site-packages")
@@ -240,17 +256,6 @@ set(PYTHON_VARIANT_PATH ${_Python_VARIANT_PATH} CACHE INTERNAL "")
 
 # Set to PyOpenColorIO site-package location.
 set(_PyOpenColorIO_SITE_PACKAGE_DIR "${PYTHON_VARIANT_PATH}/PyOpenColorIO")
-
-# Make sure build layout mirrors the installation, using PyOpenColorIO folder
-# and __init__.py file. When building the Python wheel, do not override the
-# target directory.
-if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-	set_target_properties(PyOpenColorIO PROPERTIES
-		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/PyOpenColorIO"
-	)
-endif()
-
-file(COPY package/__init__.py DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/PyOpenColorIO")
 
 install(TARGETS PyOpenColorIO
     LIBRARY DESTINATION ${_PyOpenColorIO_SITE_PACKAGE_DIR}
