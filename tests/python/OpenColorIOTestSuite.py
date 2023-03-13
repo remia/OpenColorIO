@@ -33,7 +33,7 @@ if len(sys.argv) > 1:
         # Note: Only when compiling within Microsoft Visual Studio editor i.e. not on command line.
         if len(sys.argv) == 3:
             opencolorio_dir = os.path.join(opencolorio_dir, sys.argv[2])
-            pyopencolorio_dir = os.path.join(pyopencolorio_dir, sys.argv[2])
+            # pyopencolorio_dir = os.path.join(pyopencolorio_dir, sys.argv[2])
 
         # PyOpenColorIO __init__.py file handle os.add_dll_directory()
         os.environ['PATH'] = '{0};{1}'.format(opencolorio_dir, os.getenv('PATH', ''))
