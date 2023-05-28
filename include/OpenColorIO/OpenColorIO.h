@@ -733,11 +733,8 @@ public:
     const char * getRoleColorSpace(const char * roleName) const noexcept;
 
     /**
-     * \defgroup Methods related to displays and views.
-     * @{
-     */
-
-    /**
+     * Methods related to displays and views.
+     *
      * The following methods only manipulate active displays and views. Active
      * displays and views are defined from an env. variable or from the config file.
      *
@@ -854,11 +851,8 @@ public:
     /// Clear all the displays.
     void clearDisplays();
 
-    /** @} */
-
     /**
-     * \defgroup Methods related to the Virtual Display.
-     * @{
+     * Methods related to the Virtual Display.
      *
      *  ...  (See descriptions for the non-virtual methods above.)
      *
@@ -937,8 +931,6 @@ public:
      * Returns the index of the display.
      */
     int instantiateDisplayFromICCProfile(const char * ICCProfileFilepath);
-
-    /** @} */
 
     /**
      * \brief
@@ -1087,8 +1079,7 @@ public:
     void clearViewTransforms();
 
     /**
-     * \defgroup Methods related to named transforms.
-     * @{
+     * Methods related to named transforms.
      */
 
     /**
@@ -1130,8 +1121,6 @@ public:
 
     /// Clear all named transforms.
     void clearNamedTransforms();
-
-    /** @} */
 
     // 
     // File Rules
@@ -2051,8 +2040,7 @@ private:
     const Impl * getImpl() const { return m_impl; }
 };
 
-/** \defgroup ColorSpaceSetOperators
- *  @{
+/** ColorSpaceSetOperators
  */
 
 /**
@@ -2091,8 +2079,6 @@ extern OCIOEXPORT ConstColorSpaceSetRcPtr operator&&(const ConstColorSpaceSetRcP
  */
 extern OCIOEXPORT ConstColorSpaceSetRcPtr operator-(const ConstColorSpaceSetRcPtr & lcss,
                                                     const ConstColorSpaceSetRcPtr & rcss);
-
-/** @}*/
 
 
 //
@@ -3669,8 +3655,7 @@ public:
     virtual bool isSupported() const noexcept = 0;
 
     /**
-     * \defgroup Methods to access some information of the attached and active monitors.
-     * @{
+     * Methods to access some information of the attached and active monitors.
      */
 
     /// Get the number of active monitors reported by the operating system.
@@ -3686,8 +3671,6 @@ public:
     virtual const char * getMonitorName(size_t idx) const = 0;
     /// Get the ICC profile path associated to the monitor.
     virtual const char * getProfileFilepath(size_t idx) const = 0;
-
-    /** @} */
 
 protected:
     SystemMonitors() = default;
