@@ -159,15 +159,11 @@ setup(
     version=get_version(),
     package_dir={
         'PyOpenColorIO': 'src/bindings/python/package',
-        'PyOpenColorIO.tests': 'tests/python',
-        'PyOpenColorIO.data': 'tests/data',
         'PyOpenColorIO.bin.pyocioamf': 'src/apps/pyocioamf',
         'PyOpenColorIO.bin.pyociodisplay': 'src/apps/pyociodisplay',
     },
     packages=[
         'PyOpenColorIO',
-        'PyOpenColorIO.tests',
-        'PyOpenColorIO.data',
         'PyOpenColorIO.bin.pyocioamf',
         'PyOpenColorIO.bin.pyociodisplay',
     ],
