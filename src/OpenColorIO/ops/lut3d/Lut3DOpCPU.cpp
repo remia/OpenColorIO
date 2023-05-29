@@ -1834,7 +1834,6 @@ void InvLut3DRenderer::apply(const void * inImg, void * outImg, long numPixels) 
         // For now, if no result is found, return 0.
         float result[3] = { 0.f, 0.f, 0.f };
 
-        unsigned long cnt = 0;
         long level = 0;
         while (level >= 0)
         {
@@ -1850,7 +1849,6 @@ void InvLut3DRenderer::apply(const void * inImg, void * outImg, long numPixels) 
                     B <= levels[level].maxVals[node * chans + 2];
                 currentChild[level]++;
                 currentChildInd[level]++;
-                cnt++;
 
                 if (inRange)
                 {
@@ -1927,4 +1925,3 @@ ConstOpCPURcPtr GetLut3DRenderer(ConstLut3DOpDataRcPtr & lut)
 }
 
 } // namespace OCIO_NAMESPACE
-
