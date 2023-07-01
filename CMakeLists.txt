@@ -159,6 +159,7 @@ endif()
 
 ###############################################################################
 # Other preferences
+
 option(OCIO_VERBOSE "Display more information when searching or installing dependencies" OFF)
 
 ###############################################################################
@@ -176,6 +177,10 @@ endif()
 
 option(OCIO_USE_SSE "Specify whether to enable SSE CPU performance optimizations" ON)
 option(OCIO_USE_OIIO_FOR_APPS "Request OIIO to build apps (ociolutimage, ocioconvert and ociodisplay), the default uses OpenEXR." OFF)
+
+option(OCIO_NO_SONAME "Disable version symlink for OpenColorIO library" OFF)
+set (OCIO_PYTHON_INSTALL_RPATH "" CACHE STRING
+    "Specify the RPATHs to install for the Python module (darwin and linux only)")
 
 
 ###############################################################################

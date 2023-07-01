@@ -106,7 +106,7 @@ endif(NOT HAVE_SSE2)
 ###############################################################################
 # Define RPATH.
 
-if (UNIX AND NOT CMAKE_SKIP_RPATH)
+if (UNIX AND NOT CMAKE_SKIP_RPATH AND NOT CMAKE_INSTALL_RPATH)
     # With the 'usual' install path structure in mind, search from the bin directory
     # (i.e. a binary loading a dynamic library) and then from the current directory
     # (i.e. dynamic library loading another dynamic library).  
