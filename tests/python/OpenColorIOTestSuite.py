@@ -45,6 +45,17 @@ moduledir = os.path.dirname(importlib.find_loader("PyOpenColorIO").path)
 print(moduledir)
 modulepath = os.path.join(moduledir, "PyOpenColorIO.pyd")
 print(modulepath)
+
+def list_files(startpath):
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * (level)
+        print('{}{}/'.format(indent, os.path.basename(root)))
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            print('{}{}'.format(subindent, f))
+print(list_files("C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise"))
+
 try:
     sp.call(["DUMPBIN.exe", "/IMPORTS", modulepath])
 except Exception as e:
