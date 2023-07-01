@@ -50,18 +50,15 @@ def list_files(startpath):
     for root, dirs, files in os.walk(startpath):
         level = root.replace(startpath, '').count(os.sep)
         indent = ' ' * 4 * (level)
-        print('{}{}/'.format(indent, os.path.basename(root)))
+        # print('{}{}/'.format(indent, os.path.basename(root)))
         subindent = ' ' * 4 * (level + 1)
         for f in files:
-            print('{}{}'.format(subindent, f))
-print(list_files("C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise"))
+            if "dumpbin" in f:
+                print('{}{}{}'.format(root, dirs, f))
+list_files("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x64")
 
 try:
-    sp.call(["DUMPBIN.exe", "/IMPORTS", modulepath])
-except Exception as e:
-    print("Except:", e)
-try:
-    sp.call(["DUMPBIN", "/IMPORTS", modulepath])
+    sp.call(["C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Tools\\MSVC\\14.29.30133\\bin\\Hostx64\\x64\\dumpbin.exe", "/IMPORTS", modulepath])
 except Exception as e:
     print("Except:", e)
 with dlltracer.Trace(out=sys.stdout):
