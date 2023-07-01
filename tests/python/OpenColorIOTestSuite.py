@@ -5,6 +5,9 @@ import logging
 import unittest
 import os
 import sys
+import dlltracer
+import subprocess as sp
+import importlib
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,7 +41,20 @@ else:
     os.environ["TEST_DATAFILES_DIR"] = os.path.join(os.path.dirname(here), 'data', 'files')
     sys.path.insert(0, here)
 
-import PyOpenColorIO as OCIO
+moduledir = os.path.dirname(importlib.find_loader("PyOpenColorIO").path)
+print(moduledir)
+modulepath = os.path.join(moduledir, "PyOpenColorIO.pyd")
+print(modulepath)
+try:
+    sp.call(["DUMPBIN.exe", "/IMPORTS", modulepath])
+except Exception as e:
+    print("Except:", e)
+try:
+    sp.call(["DUMPBIN", "/IMPORTS", modulepath])
+except Exception as e:
+    print("Except:", e)
+with dlltracer.Trace(out=sys.stdout):
+    import PyOpenColorIO as OCIO
 
 import AllocationTransformTest
 import BakerTest

@@ -67,141 +67,141 @@ jobs:
   # Linux Wheels
   # ---------------------------------------------------------------------------
 
-  linux:
-    name: Build wheels on Linux
-    runs-on: ubuntu-latest
-    # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
-    strategy:
-      matrix:
-        include:
-          # -------------------------------------------------------------------
-          # CPython 64 bits
-          # -------------------------------------------------------------------
-          - build: CPython 3.7 64 bits
-            python: cp37-manylinux*
-            arch: x86_64
-          - build: CPython 3.8 64 bits
-            python: cp38-manylinux*
-            arch: x86_64
-          - build: CPython 3.9 64 bits
-            python: cp39-manylinux*
-            arch: x86_64
-          - build: CPython 3.10 64 bits
-            python: cp310-manylinux*
-            arch: x86_64
-          - build: CPython 3.11 64 bits
-            python: cp311-manylinux*
-            arch: x86_64
-          # -------------------------------------------------------------------
-          # CPython ARM 64 bits
-          # -------------------------------------------------------------------
-          - build: CPython 3.7 ARM 64 bits
-            python: cp37-manylinux*
-            arch: aarch64
-          - build: CPython 3.8 ARM 64 bits
-            python: cp38-manylinux*
-            arch: aarch64
-          - build: CPython 3.9 ARM 64 bits
-            python: cp39-manylinux*
-            arch: aarch64
-          - build: CPython 3.10 ARM 64 bits
-            python: cp310-manylinux*
-            arch: aarch64
-          - build: CPython 3.11 ARM 64 bits
-            python: cp311-manylinux*
-            arch: aarch64
+  # linux:
+  #   name: Build wheels on Linux
+  #   runs-on: ubuntu-latest
+  #   # Don't run on OCIO forks
+  #   if: |
+  #     github.event_name != 'schedule' ||
+  #     github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         # -------------------------------------------------------------------
+  #         # CPython 64 bits
+  #         # -------------------------------------------------------------------
+  #         - build: CPython 3.7 64 bits
+  #           python: cp37-manylinux*
+  #           arch: x86_64
+  #         - build: CPython 3.8 64 bits
+  #           python: cp38-manylinux*
+  #           arch: x86_64
+  #         - build: CPython 3.9 64 bits
+  #           python: cp39-manylinux*
+  #           arch: x86_64
+  #         - build: CPython 3.10 64 bits
+  #           python: cp310-manylinux*
+  #           arch: x86_64
+  #         - build: CPython 3.11 64 bits
+  #           python: cp311-manylinux*
+  #           arch: x86_64
+  #         # -------------------------------------------------------------------
+  #         # CPython ARM 64 bits
+  #         # -------------------------------------------------------------------
+  #         - build: CPython 3.7 ARM 64 bits
+  #           python: cp37-manylinux*
+  #           arch: aarch64
+  #         - build: CPython 3.8 ARM 64 bits
+  #           python: cp38-manylinux*
+  #           arch: aarch64
+  #         - build: CPython 3.9 ARM 64 bits
+  #           python: cp39-manylinux*
+  #           arch: aarch64
+  #         - build: CPython 3.10 ARM 64 bits
+  #           python: cp310-manylinux*
+  #           arch: aarch64
+  #         - build: CPython 3.11 ARM 64 bits
+  #           python: cp311-manylinux*
+  #           arch: aarch64
 
-    steps:
-      - uses: actions/checkout@v3
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
-        name: Install Python
-        with:
-          python-version: '3.8'
+  #     - uses: actions/setup-python@v4
+  #       name: Install Python
+  #       with:
+  #         python-version: '3.8'
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        with:
-          platforms: all
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v2
+  #       with:
+  #         platforms: all
 
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.12.0
-        env:
-          CIBW_BUILD: ${{ matrix.python }}
-          CIBW_ARCHS: ${{ matrix.arch }}
+  #     - name: Build wheels
+  #       uses: pypa/cibuildwheel@v2.12.0
+  #       env:
+  #         CIBW_BUILD: ${{ matrix.python }}
+  #         CIBW_ARCHS: ${{ matrix.arch }}
 
-      - uses: actions/upload-artifact@v3
-        with:
-          path: ./wheelhouse/*.whl
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         path: ./wheelhouse/*.whl
 
   # ---------------------------------------------------------------------------
   # macOS Wheels
   # ---------------------------------------------------------------------------
 
-  macos:
-    name: Build wheels on macOS
-    runs-on: macos-11
-    # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
-    strategy:
-      matrix:
-        include:
-          # -------------------------------------------------------------------
-          # CPython 64 bits
-          # -------------------------------------------------------------------
-          - build: CPython 3.7 64 bits
-            python: cp37-*
-            arch: x86_64
-          - build: CPython 3.8 64 bits
-            python: cp38-*
-            arch: x86_64
-          - build: CPython 3.9 64 bits
-            python: cp39-*
-            arch: x86_64
-          - build: CPython 3.10 64 bits
-            python: cp310-*
-            arch: x86_64
-          - build: CPython 3.11 64 bits
-            python: cp311-*
-            arch: x86_64
-          # -------------------------------------------------------------------
-          # CPython ARM 64 bits
-          # -------------------------------------------------------------------
-          - build: CPython 3.8 ARM 64 bits
-            python: cp38-*
-            arch: arm64
-          - build: CPython 3.9 ARM 64 bits
-            python: cp39-*
-            arch: arm64
-          - build: CPython 3.10 ARM 64 bits
-            python: cp310-*
-            arch: arm64
-          - build: CPython 3.11 ARM 64 bits
-            python: cp311-*
-            arch: arm64
+  # macos:
+  #   name: Build wheels on macOS
+  #   runs-on: macos-11
+  #   # Don't run on OCIO forks
+  #   if: |
+  #     github.event_name != 'schedule' ||
+  #     github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         # -------------------------------------------------------------------
+  #         # CPython 64 bits
+  #         # -------------------------------------------------------------------
+  #         - build: CPython 3.7 64 bits
+  #           python: cp37-*
+  #           arch: x86_64
+  #         - build: CPython 3.8 64 bits
+  #           python: cp38-*
+  #           arch: x86_64
+  #         - build: CPython 3.9 64 bits
+  #           python: cp39-*
+  #           arch: x86_64
+  #         - build: CPython 3.10 64 bits
+  #           python: cp310-*
+  #           arch: x86_64
+  #         - build: CPython 3.11 64 bits
+  #           python: cp311-*
+  #           arch: x86_64
+  #         # -------------------------------------------------------------------
+  #         # CPython ARM 64 bits
+  #         # -------------------------------------------------------------------
+  #         - build: CPython 3.8 ARM 64 bits
+  #           python: cp38-*
+  #           arch: arm64
+  #         - build: CPython 3.9 ARM 64 bits
+  #           python: cp39-*
+  #           arch: arm64
+  #         - build: CPython 3.10 ARM 64 bits
+  #           python: cp310-*
+  #           arch: arm64
+  #         - build: CPython 3.11 ARM 64 bits
+  #           python: cp311-*
+  #           arch: arm64
 
-    steps:
-      - uses: actions/checkout@v3
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
-        name: Install Python
-        with:
-          python-version: '3.8'
+  #     - uses: actions/setup-python@v4
+  #       name: Install Python
+  #       with:
+  #         python-version: '3.8'
 
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.12.0
-        env:
-          CIBW_BUILD: ${{ matrix.python }}
-          CIBW_ARCHS: ${{ matrix.arch }}
+  #     - name: Build wheels
+  #       uses: pypa/cibuildwheel@v2.12.0
+  #       env:
+  #         CIBW_BUILD: ${{ matrix.python }}
+  #         CIBW_ARCHS: ${{ matrix.arch }}
 
-      - uses: actions/upload-artifact@v3
-        with:
-          path: ./wheelhouse/*.whl
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         path: ./wheelhouse/*.whl
 
   # ---------------------------------------------------------------------------
   # Windows Wheels
@@ -220,21 +220,21 @@ jobs:
           # -------------------------------------------------------------------
           # CPython 64 bits
           # -------------------------------------------------------------------
-          - build: CPython 3.7 64 bits
-            python: cp37-*
-            arch: AMD64
-          - build: CPython 3.8 64 bits
-            python: cp38-*
-            arch: AMD64
+          # - build: CPython 3.7 64 bits
+          #   python: cp37-*
+          #   arch: AMD64
+          # - build: CPython 3.8 64 bits
+          #   python: cp38-*
+          #   arch: AMD64
           - build: CPython 3.9 64 bits
             python: cp39-*
             arch: AMD64
-          - build: CPython 3.10 64 bits
-            python: cp310-*
-            arch: AMD64
-          - build: CPython 3.11 64 bits
-            python: cp311-*
-            arch: AMD64
+          # - build: CPython 3.10 64 bits
+          #   python: cp310-*
+          #   arch: AMD64
+          # - build: CPython 3.11 64 bits
+          #   python: cp311-*
+          #   arch: AMD64
 
     steps:
       - uses: actions/checkout@v3
@@ -255,19 +255,19 @@ jobs:
           path: ./wheelhouse/*.whl
 
 
-  upload_pypi:
-    needs: [sdist, linux, macos, windows]
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
-    steps:
-      - uses: actions/setup-python@v4
+  # upload_pypi:
+  #   needs: [sdist, linux, macos, windows]
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+  #   steps:
+  #     - uses: actions/setup-python@v4
 
-      - uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: artifact
+  #         path: dist
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+  #     - uses: pypa/gh-action-pypi-publish@release/v1
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.PYPI_API_TOKEN }}
