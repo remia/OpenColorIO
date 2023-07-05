@@ -42,26 +42,32 @@ def get_version():
 # Remove symlinks as Python wheels do not support them at the moment.
 # Rename the remaining dylib to the expected install name (major.minor).
 def patch_symlink(folder):
-    if sys.platform.startswith("darwin") or sys.platform.startswith("linux"):
-        # First remove all symlinks in the folder
-        for f in os.listdir(folder):
-            filepath = os.path.join(folder, f)
-            if os.path.islink(filepath):
-                os.remove(filepath)
-
-        # Then match the remaining OCIO dynamic lib and rename it
+    if sys.platform.startswith("darwin"):
         VERSION_REGEX = re.compile(
             r"^libOpenColorIO.(?P<major>\d+).(?P<minor>\d+).\d+.(?P<ext>\w+)$")
-        for f in os.listdir(folder):
-            filepath = os.path.join(folder, f)
-            match = VERSION_REGEX.search(f)
-            if match:
-                res = match.groupdict()
-                new_filename = "libOpenColorIO.{}.{}.{}".format(
-                    res["major"], res["minor"], res["ext"])
-                new_filepath = os.path.join(folder, new_filename)
-                os.rename(filepath, new_filepath)
-                break
+    elif sys.platform.startswith("linux"):
+        VERSION_REGEX = re.compile(
+            r"^libOpenColorIO.(?P<ext>\w+).(?P<major>\d+).(?P<minor>\d+).\d+$")
+    else:
+        return
+
+    # First remove all symlinks in the folder
+    for f in os.listdir(folder):
+        filepath = os.path.join(folder, f)
+        if os.path.islink(filepath):
+            os.remove(filepath)
+
+    # Then match the remaining OCIO dynamic lib and rename it
+    for f in os.listdir(folder):
+        filepath = os.path.join(folder, f)
+        match = VERSION_REGEX.search(f)
+        if match:
+            res = match.groupdict()
+            new_filename = "libOpenColorIO.{}.{}.{}".format(
+                res["major"], res["minor"], res["ext"])
+            new_filepath = os.path.join(folder, new_filename)
+            os.rename(filepath, new_filepath)
+            break
 
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
