@@ -44,10 +44,12 @@ def get_version():
 def patch_symlink(folder):
     if sys.platform.startswith("darwin"):
         VERSION_REGEX = re.compile(
-            r"^libOpenColorIO.(?P<major>\d+).(?P<minor>\d+).\d+.(?P<ext>\w+)$")
+            r"^libOpenColorIO.(?P<major>\d+).(?P<minor>\d+).\d+.dylib$")
+        NAME_PATTERN = "libOpenColorIO.{major}.{minor}.dylib"
     elif sys.platform.startswith("linux"):
         VERSION_REGEX = re.compile(
-            r"^libOpenColorIO.(?P<ext>\w+).(?P<major>\d+).(?P<minor>\d+).\d+$")
+            r"^libOpenColorIO.so.(?P<major>\d+).(?P<minor>\d+).\d+$")
+        NAME_PATTERN = "libOpenColorIO.so.{major}.{minor}"
     else:
         return
 
@@ -63,8 +65,8 @@ def patch_symlink(folder):
         match = VERSION_REGEX.search(f)
         if match:
             res = match.groupdict()
-            new_filename = "libOpenColorIO.{}.{}.{}".format(
-                res["major"], res["minor"], res["ext"])
+            new_filename = NAME_PATTERN.format(
+                major=res["major"], minor=res["minor"])
             new_filepath = os.path.join(folder, new_filename)
             os.rename(filepath, new_filepath)
             break
