@@ -390,15 +390,20 @@ elseif(APPLE)
     if (_OCIO_LINK_FLAGS_LIST_)
         list(JOIN _OCIO_LINK_FLAGS_LIST_ ";" _OCIO_LINK_FLAGS_LIST_)
         set(CUSTOM_LINK_FLAGS "${CUSTOM_LINK_FLAGS};${_OCIO_LINK_FLAGS_LIST_}")
-    endif()              
+    endif()
+endif()
+
+if (OCIO_USE_SOVERSION)
+    set_target_properties(OpenColorIO PROPERTIES
+        VERSION       ${OpenColorIO_VERSION}
+        SOVERSION     ${SOVERSION}
+    )
 endif()
 
 set_target_properties(OpenColorIO PROPERTIES
     OUTPUT_NAME   ${PROJECT_NAME}${OCIO_LIBNAME_SUFFIX}
     COMPILE_OPTIONS "${PLATFORM_COMPILE_OPTIONS}"
     LINK_OPTIONS "${CUSTOM_LINK_FLAGS}"
-    VERSION       ${OpenColorIO_VERSION}
-    SOVERSION     ${SOVERSION}
     PUBLIC_HEADER "${INSTALL_HEADERS}"
 )
 

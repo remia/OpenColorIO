@@ -112,6 +112,7 @@ class CMakeBuild(build_ext):
             # Not used on MSVC, but no harm
             "-DCMAKE_BUILD_TYPE={}".format(cfg),
             "-DBUILD_SHARED_LIBS=ON",
+            "-DOCIO_USE_SOVERSION=OFF",
             "-DOCIO_BUILD_DOCS=ON",
             "-DOCIO_BUILD_APPS=ON",
             "-DOCIO_BUILD_TESTS=OFF",
@@ -194,7 +195,7 @@ class CMakeBuild(build_ext):
             ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         )
 
-        patch_symlink(extdir)
+        # patch_symlink(extdir)
 
 
 # For historical reason, we use PyOpenColorIO as the import name
