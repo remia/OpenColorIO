@@ -10,7 +10,7 @@
 #   yaml-cpp_VERSION        - Library's version
 #
 # Global targets defined by this module:
-#   yaml-cpp
+#   yaml-cpp::yaml-cpp
 #
 # For compatibility with the upstream CMake package, the following variables and targets are defined:
 #   yaml-cpp::yaml-cpp      - Alias of the yaml-cpp target
@@ -50,7 +50,13 @@ if(NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL ALL)
     endif()
 
     if(yaml-cpp_FOUND)
-        get_target_property(yaml-cpp_LIBRARY yaml-cpp LOCATION)
+        # yaml-cpp < 0.8 creates a yaml-cpp target
+        if(TARGET yaml-cpp)
+            message(STATUS "yaml-cpp ${yaml-cpp_VERSION} detected, aliasing targets.")
+            add_library(yaml-cpp::yaml-cpp ALIAS yaml-cpp)
+        endif()
+
+        get_target_property(yaml-cpp_LIBRARY yaml-cpp::yaml-cpp LOCATION)
     else()
 
         # As yaml-cpp-config.cmake search fails, search an installed library
@@ -137,8 +143,8 @@ endif()
 ###############################################################################
 ### Create target
 
-if(yaml-cpp_FOUND AND NOT TARGET yaml-cpp)
-    add_library(yaml-cpp UNKNOWN IMPORTED GLOBAL)
+if(yaml-cpp_FOUND AND NOT TARGET yaml-cpp::yaml-cpp)
+    add_library(yaml-cpp::yaml-cpp UNKNOWN IMPORTED GLOBAL)
     set(_yaml-cpp_TARGET_CREATE TRUE)
 endif()
 
@@ -146,7 +152,7 @@ endif()
 ### Configure target ###
 
 if(_yaml-cpp_TARGET_CREATE)
-    set_target_properties(yaml-cpp PROPERTIES
+    set_target_properties(yaml-cpp::yaml-cpp PROPERTIES
         IMPORTED_LOCATION ${yaml-cpp_LIBRARY}
         INTERFACE_INCLUDE_DIRECTORIES ${yaml-cpp_INCLUDE_DIR}
     )
@@ -157,12 +163,5 @@ endif()
 ###############################################################################
 ### Set variables for compatibility ###
 
-if(TARGET yaml-cpp AND NOT TARGET yaml-cpp::yaml-cpp)
-    add_library(yaml-cpp::yaml-cpp ALIAS yaml-cpp)
-endif()
-
-if(yaml-cpp_INCLUDE_DIR)
-    set(YAML_CPP_INCLUDE_DIR "${yaml-cpp_INCLUDE_DIR}")
-endif()
-
-set(YAML_CPP_LIBRARIES yaml-cpp::yaml-cpp)
+get_target_property(YAML_CPP_INCLUDE_DIR yaml-cpp::yaml-cpp INCLUDE_DIRECTORIES)
+get_target_property(YAML_CPP_LIBRARIES yaml-cpp::yaml-cpp LOCATION)
