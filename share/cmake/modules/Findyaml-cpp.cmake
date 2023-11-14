@@ -149,7 +149,7 @@ endif()
 ###############################################################################
 ### Create target
 
-if (NOT TARGET yaml-cpp::yaml-cpp)
+if (yaml-cpp_FOUND AND NOT TARGET yaml-cpp::yaml-cpp)
     add_library(yaml-cpp::yaml-cpp UNKNOWN IMPORTED GLOBAL)
     set_target_properties(yaml-cpp::yaml-cpp PROPERTIES
         IMPORTED_LOCATION ${yaml-cpp_LIBRARY}
