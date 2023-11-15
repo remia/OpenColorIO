@@ -163,8 +163,8 @@ if (NOT TARGET yaml-cpp::yaml-cpp)
     if (NOT TARGET yaml-cpp)
         add_library(yaml-cpp ALIAS yaml-cpp::yaml-cpp)
     endif ()
-
-    # TODO: Remove this variable and use the `yaml-cpp::yaml-cpp` target
-    # directly when the minimum version of yaml-cpp is updated to 0.8.
-    set(YAML_CPP_LIBRARIES yaml-cpp::yaml-cpp)
 endif ()
+
+# TODO: Remove this variable and use the `yaml-cpp::yaml-cpp` target
+# directly when the minimum version of yaml-cpp is updated to 0.8.
+set(YAML_CPP_LIBRARIES yaml-cpp::yaml-cpp)
