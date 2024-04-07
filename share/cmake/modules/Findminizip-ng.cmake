@@ -57,7 +57,19 @@ if(NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL ALL)
         # Depending on the options used when minizip-ng was built, it could have multiple libraries
         # listed in INTERFACE_LINK_LIBRARIES. OCIO only needs ZLIB.
         # Only add custom zlib target ZLIB::ZLIB to INTERFACE_LINK_LIBRARIES.
-        set_target_properties(MINIZIP::minizip-ng PROPERTIES INTERFACE_LINK_LIBRARIES "ZLIB::ZLIB")
+        list(APPEND _minizip-ng_PATCHED_LINK_LIBRARIES "ZLIB::ZLIB")
+
+        # Additional support for minizip-ng built with MZ_ICONV=ON (default)
+        get_target_property(minizip-ng_LINK_LIBRARIES MINIZIP::minizip-ng INTERFACE_LINK_LIBRARIES)
+        foreach(_linked_lib ${minizip-ng_LINK_LIBRARIES})
+            string(FIND ${_linked_lib} "iconv" _found_iconv)
+            if (_found_iconv GREATER_EQUAL 0)
+                list(APPEND _minizip-ng_PATCHED_LINK_LIBRARIES ${_linked_lib})
+            endif()
+        endforeach()
+
+        set_target_properties(MINIZIP::minizip-ng PROPERTIES
+            INTERFACE_LINK_LIBRARIES "${_minizip-ng_PATCHED_LINK_LIBRARIES}")
 
         if (NOT minizip-ng_LIBRARY)
             # Lib names to search for
