@@ -8,9 +8,10 @@
 #include <cmath>
 #include <iomanip>
 #include <limits>
+#include <iostream>
 
-#include <Imath/ImathMatrix.h>
-#include <Imath/ImathMatrixAlgo.h>
+// Use un-namespaced math function, would be good to prefix std
+#include <math.h>
 
 
 namespace OCIO_NAMESPACE
@@ -33,6 +34,20 @@ using f2 = std::array<float, 2>;
 using f3 = std::array<float, 3>;
 using f4 = std::array<float, 4>;
 using m33f = std::array<float, 9>;
+
+constexpr int GAMUT_TABLE_SIZE = 360;
+
+struct gamutTable
+{
+    static constexpr int size = GAMUT_TABLE_SIZE;
+    float table[size][3];
+};
+
+struct gammaTable
+{
+    static constexpr int size = GAMUT_TABLE_SIZE;
+    float table[size];
+};
 
 struct Chromaticities
 {
@@ -70,12 +85,40 @@ void print_v3(const std::string &name, const f3 &v)
     std::cerr << std::fixed << std::setprecision(9) << "\t" << v[0] << "\t" << v[1] << "\t" << v[2] << "\n";
 }
 
+void print_v4(const std::string &name, const f4 &v)
+{
+    std::cerr << name << "\n";
+    std::cerr << std::fixed << std::setprecision(9) << "\t" << v[0] << "\t" << v[1] << "\t" << v[2] << "\t" << v[3] << "\n";
+}
+
 void print_m33(const std::string &name, const m33f &m)
 {
     std::cerr << name << "\n";
     std::cerr << std::fixed << std::setprecision(9) << "\t" << m[0] << "\t" << m[1] << "\t" << m[2] << "\n";
     std::cerr << std::fixed << std::setprecision(9) << "\t" << m[3] << "\t" << m[4] << "\t" << m[5] << "\n";
     std::cerr << std::fixed << std::setprecision(9) << "\t" << m[6] << "\t" << m[7] << "\t" << m[8] << "\n";
+}
+
+void print_gt(const std::string &name, const gamutTable &gt)
+{
+    std::cerr << name << "\n";
+    for (int i = 0; i < gt.size; ++i)
+    {
+        std::cerr << std::fixed << std::setprecision(9)
+            << "\t" << gt.table[i][0] << ",\t"
+            << gt.table[i][1] << ",\t"
+            << gt.table[i][2] << ",\n";
+    }
+}
+
+void print_gmt(const std::string &name, const gammaTable &gt)
+{
+    std::cerr << name << "\n";
+    for (int i = 0; i < gt.size; ++i)
+    {
+        std::cerr << std::fixed << std::setprecision(9)
+            << "\t" << gt.table[i] << ",\n";
+    }
 }
 
 
@@ -179,6 +222,32 @@ constexpr f3 mult_f3_f33(const f3 &f3, const m33f &mat33)
         f3[0] * mat33[0] + f3[1] * mat33[1] + f3[2] * mat33[2],
         f3[0] * mat33[3] + f3[1] * mat33[4] + f3[2] * mat33[5],
         f3[0] * mat33[6] + f3[1] * mat33[7] + f3[2] * mat33[8]
+    };
+}
+
+constexpr m33f mult_f33_f33(const m33f &a, const m33f &b)
+{
+    return {
+        a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
+        a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
+        a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
+
+        a[3] * b[0] + a[4] * b[3] + a[5] * b[6],
+        a[3] * b[1] + a[4] * b[4] + a[5] * b[7],
+        a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
+
+        a[6] * b[0] + a[7] * b[3] + a[8] * b[6],
+        a[6] * b[1] + a[7] * b[4] + a[8] * b[7],
+        a[6] * b[2] + a[7] * b[5] + a[8] * b[8]
+    };
+}
+
+constexpr m33f scale_f33(const m33f &mat33, const f3 &scale)
+{
+    return {
+        mat33[0] * scale[0], mat33[3], mat33[6],
+        mat33[1], mat33[4] * scale[1], mat33[7],
+        mat33[2], mat33[5], mat33[8] * scale[2]
     };
 }
 
@@ -391,6 +460,11 @@ constexpr m33f XYZtoRGB_f33(const Chromaticities &C, float Y=1.f)
     return invert_f33(RGBtoXYZ_f33(C, Y));
 }
 
+constexpr m33f RGBtoRGB_f33(const Chromaticities &Csrc, const Chromaticities &Cdst)
+{
+    return mult_f33_f33(XYZtoRGB_f33(Cdst), RGBtoXYZ_f33(Csrc));
+}
+
 constexpr m33f Identity_M33 = {
     1.f, 0.f, 0.f,
     0.f, 1.f, 0.f,
@@ -415,6 +489,7 @@ constexpr Chromaticities AP1_PRI =
 
 constexpr m33f AP1_TO_XYZ = RGBtoXYZ_f33(AP1_PRI);
 constexpr m33f XYZ_TO_AP1 = XYZtoRGB_f33(AP1_PRI);
+constexpr m33f AP0_TO_AP1 = RGBtoRGB_f33(AP0_PRI, AP1_PRI);
 
 constexpr Chromaticities REC709_PRI =
 {
@@ -483,20 +558,6 @@ constexpr m33f generate_panlrcm(float ra, float ba)
 //////////////////////////////////////////////////////////////////////////
 // Gamut lookup table utilities
 //////////////////////////////////////////////////////////////////////////
-
-constexpr int GAMUT_TABLE_SIZE = 360;
-
-struct gamutTable
-{
-    static constexpr int size = GAMUT_TABLE_SIZE;
-    float table[size][3];
-};
-
-struct gammaTable
-{
-    static constexpr int size = GAMUT_TABLE_SIZE;
-    float table[size];
-};
 
 constexpr int midpoint(int low, int high)
 {
@@ -668,6 +729,9 @@ struct ODTParams
     m33f LIMIT_RGB_TO_XYZ;
     m33f LIMIT_XYZ_TO_RGB;
     JMhParams limitJMhParams;
+
+    // Optim
+    m33f AP1_to_RGB16;
 };
 
 // CAM
@@ -705,14 +769,14 @@ constexpr f4 compr_func_params = {0.75f, 1.1f, 1.3f, 1.f};
 // Post adaptation non linear response compression
 constexpr float panlrc_forward(float v, float F_L)
 {
-    float F_L_v = spow(F_L * fabs(v) / 100.f, 0.42f);
+    float F_L_v = pow(F_L * fabs(v) / 100.f, 0.42f);
     float c = (400.f * std::copysign(1., v) * F_L_v) / (27.13f + F_L_v);
     return c;
 }
 
 constexpr float panlrc_inverse(float v, float F_L)
 {
-    float p = sign(v) * 100.f / F_L * spow((27.13f * fabs(v) / (400.f - fabs(v))), 1.f / 0.42f);
+    float p = sign(v) * 100.f / F_L * pow((27.13f * fabs(v) / (400.f - fabs(v))), 1.f / 0.42f);
     return p;
 }
 
@@ -1276,6 +1340,33 @@ f3 outputTransform_inv(const f3 &RGB, const ODTParams &params)
     return inputRGB;
 }
 
+f3 outputTransform_optim_fwd(const f3 &RGB, const ODTParams &params)
+{
+    const f3 AP1 = mult_f3_f33(RGB, AP0_TO_AP1);
+    const f3 AP1_clamped = clamp_f3(
+        AP1, 0.f, std::numeric_limits<float>::max());
+    const f3 RGB_c = mult_f3_f33(AP1_clamped, params.AP1_to_RGB16);
+    const f3 RGB_a = {
+        panlrc_forward(RGB_c[0], params.inputJMhParams.F_L),
+        panlrc_forward(RGB_c[1], params.inputJMhParams.F_L),
+        panlrc_forward(RGB_c[2], params.inputJMhParams.F_L)
+    };
+    const float a = RGB_a[0] - 12.f * RGB_a[1] / 11.f + RGB_a[2] / 11.f;
+    const float b = (RGB_a[0] + RGB_a[1] - 2.f * RGB_a[2]) / 9.f;
+    const float hr = atan2(b, a);
+    const float h = wrap_to_360(radians_to_degrees(hr));
+    const float A = ra * RGB_a[0] + RGB_a[1] + ba * RGB_a[2];
+    const float J = 100.f * pow( A / params.inputJMhParams.A_w, surround[1] * params.inputJMhParams.z);
+    const float M = J == 0.f ? 0.f : 43.f * surround[2] * sqrt(a * a + b * b);
+    const f3 JMh {J, M, h};
+
+    const f3 tonemappedJMh = tonemapAndCompress_fwd(JMh, params);
+    const f3 compressedJMh = gamutMap_fwd(tonemappedJMh, params);
+    const f3 limitRGB = JMh_to_RGB(compressedJMh, params.LIMIT_XYZ_TO_RGB, reference_luminance, params.limitJMhParams);
+
+    return limitRGB;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Gamut lookup tables creation
 //////////////////////////////////////////////////////////////////////////
@@ -1576,6 +1667,13 @@ constexpr ODTParams init_ODTParams(
         focus_dist,
         params.LIMIT_XYZ_TO_RGB,
         params.limitJMhParams);
+
+    // Optim
+    m33f tmp = scale_f33(Identity_M33, f3_from_f(100.0f));
+    tmp = mult_f33_f33(AP1_TO_XYZ, tmp);
+    tmp = mult_f33_f33(MATRIX_16, tmp);
+    tmp = mult_f33_f33(scale_f33(Identity_M33, inputJMhParams.D_RGB), tmp);
+    params.AP1_to_RGB16 = tmp;
 
     return params;
 }

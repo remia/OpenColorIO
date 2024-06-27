@@ -170,8 +170,8 @@ GLuint CompileShaderText(GLenum shaderType, const char * text)
 
         std::string err("OCIO Shader program compilation failed: ");
         err += log;
-        err += "\n";
-        err += text;
+        // err += "\n";
+        // err += text;
 
         throw Exception(err.c_str());
     }
@@ -269,17 +269,18 @@ void OpenGLBuilder::Uniform::use()
 
 //////////////////////////////////////////////////////////
 
-OpenGLBuilderRcPtr OpenGLBuilder::Create(const GpuShaderDescRcPtr & shaderDesc)
+OpenGLBuilderRcPtr OpenGLBuilder::Create(const GpuShaderDescRcPtr & shaderDesc, const std::string &override_fs)
 {
-    return OpenGLBuilderRcPtr(new OpenGLBuilder(shaderDesc));
+    return OpenGLBuilderRcPtr(new OpenGLBuilder(shaderDesc, override_fs));
 }
 
-OpenGLBuilder::OpenGLBuilder(const GpuShaderDescRcPtr & shaderDesc)
+OpenGLBuilder::OpenGLBuilder(const GpuShaderDescRcPtr & shaderDesc, const std::string &override_fs)
     :   m_shaderDesc(shaderDesc)
     ,   m_startIndex(0)
     ,   m_fragShader(0)
     ,   m_program(glCreateProgram())
     ,   m_verbose(false)
+    ,   m_override_fs(override_fs)
 {
 }
 
@@ -490,7 +491,7 @@ unsigned OpenGLBuilder::buildProgram(const std::string & clientShaderProgram, bo
 
         std::ostringstream oss;
         oss  << getGLSLVersionString() << std::endl
-             << (!standaloneShader ? m_shaderDesc->getShaderText() : "") << std::endl
+             << (!standaloneShader ? m_override_fs.empty() ? m_shaderDesc->getShaderText() : m_override_fs : "") << std::endl
              << clientShaderProgram << std::endl;
 
         if(m_verbose)

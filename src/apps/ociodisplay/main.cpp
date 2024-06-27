@@ -37,6 +37,8 @@ namespace OCIO = OCIO_NAMESPACE;
 #include "oglapp.h"
 #include "imageio.h"
 
+#include "tables.h"
+
 bool g_verbose   = false;
 bool g_gpulegacy = false;
 bool g_gpuinfo   = false;
@@ -67,6 +69,30 @@ int g_channelHot[4]{ 1, 1, 1, 1 };  // show rgb
 
 OCIO::OglAppRcPtr g_oglApp;
 
+bool GetGLError(std::string & error)
+{
+    const GLenum glErr = glGetError();
+    if(glErr!=GL_NO_ERROR)
+    {
+#ifdef __APPLE__
+        // Unfortunately no gluErrorString equivalent on Mac.
+        error = "OpenGL Error";
+#else
+        error = (const char*)gluErrorString(glErr);
+#endif
+        return true;
+    }
+    return false;
+}
+
+void CheckStatus()
+{
+    std::string error;
+    if (GetGLError(error))
+    {
+        throw OCIO::Exception(error.c_str());
+    }
+}
 
 void UpdateOCIOGLState();
 
@@ -174,11 +200,95 @@ void InitOCIO(const char * filename)
     }
 }
 
+// two query buffers: front and back
+#define QUERY_BUFFERS 2
+// the number of required queries
+// in this example there is only one query per frame
+#define QUERY_COUNT 1
+// the array to store the two sets of queries.
+unsigned int queryID[QUERY_BUFFERS][QUERY_COUNT];
+unsigned int queryBackBuffer = 0, queryFrontBuffer = 1;
+
+// call this function when initializating the OpenGL settings
+void genQueries()
+{
+    glGenQueries(QUERY_COUNT, queryID[queryBackBuffer]);
+    glGenQueries(QUERY_COUNT, queryID[queryFrontBuffer]);
+
+    // dummy query to prevent OpenGL errors from popping out
+    // for the first frame, the previous (front buffer) query
+    // would otherwise be empty
+    glBeginQuery(GL_TIME_ELAPSED, queryID[queryFrontBuffer][0]);
+    glEndQuery(GL_TIME_ELAPSED);
+}
+
+GLuint ssbo_id = 0;
+unsigned int ssbo_size = (4*360 + 360 + 4*360 + 360) * sizeof(float);
+
+void genSSBO()
+{
+    glCreateBuffers(1, &ssbo_id);
+}
+
+void fillSSBO()
+{
+    glNamedBufferData(ssbo_id, ssbo_size, nullptr, GL_DYNAMIC_DRAW);
+
+    float *buf = (float*) glMapNamedBuffer(ssbo_id, GL_WRITE_ONLY);
+
+    memcpy(buf, reach_gamut_table, table_size*4*sizeof(float));
+    buf += table_size*4;
+
+    memcpy(buf, reach_cusp_table, table_size*sizeof(float));
+    buf += table_size;
+
+    memcpy(buf, gamut_cusp_table, table_size*4*sizeof(float));
+    buf += table_size*4;
+
+    memcpy(buf, upperHullGammaTable, table_size*sizeof(float));
+    buf += table_size;
+
+    glUnmapNamedBuffer(ssbo_id);
+
+    CheckStatus();
+}
+
+// aux function to keep the code simpler
+void swapQueryBuffers()
+{
+    if (queryBackBuffer) {
+        queryBackBuffer = 0;
+        queryFrontBuffer = 1;
+    }
+    else {
+        queryBackBuffer = 1;
+        queryFrontBuffer = 0;
+    }
+}
+
 void Redisplay(void)
 {
     if (g_oglApp)
     {
-        g_oglApp->redisplay();
+        glBeginQuery(GL_TIME_ELAPSED, queryID[queryBackBuffer][0]);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_id);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_id);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        g_oglApp->redisplay_noswap();
+        glEndQuery(GL_TIME_ELAPSED);
+        glutSwapBuffers();
+
+        GLuint64 elapsed_time;
+        glGetQueryObjectui64v(queryID[queryFrontBuffer][0], GL_QUERY_RESULT, &elapsed_time);
+        swapQueryBuffers();
+
+        std::cerr << "elapsed_time: " << elapsed_time / 1e6 << "ms"
+                  << " for viewport: " << g_oglApp->m_viewportWidth << "x" << g_oglApp->m_viewportHeight
+                  << "\n";
+
+        glutPostRedisplay();
     }
 }
 
@@ -401,10 +511,31 @@ void UpdateOCIOGLState()
     // Extract the shader information.
     OCIO::ConstGPUProcessorRcPtr gpu
         = g_gpulegacy ? processor->getOptimizedLegacyGPUProcessor(g_optimization, 32)
-                      : processor->getOptimizedGPUProcessor(g_optimization);
+                    : processor->getOptimizedGPUProcessor(g_optimization);
     gpu->extractGpuShaderInfo(shaderDesc);
 
+#define HARDCODED_SHADER
+
+#ifdef HARDCODED_SHADER
+
+    // read and store code from file
+    // std::string path = "/user_data/RND/dev/OpenColorIO/aces1.glsl";
+    std::string path = "/user_data/RND/dev/OpenColorIO/aces2.glsl";
+    std::ifstream fileStream(path);
+    if( !fileStream.is_open() )
+        std::cout << "Could not open : " << path << std::endl;
+
+    std::string str((std::istreambuf_iterator<char>(fileStream)),
+            std::istreambuf_iterator<char>());
+    fileStream.close();
+
+    g_oglApp->setShader(shaderDesc, str);
+
+#else
+
     g_oglApp->setShader(shaderDesc);
+
+#endif
 }
 
 void menuCallback(int /*id*/)
@@ -665,6 +796,16 @@ int main(int argc, char **argv)
 
     g_oglApp->setYMirror();
     g_oglApp->setPrintShader(g_gpuinfo);
+
+    genQueries();
+
+    genSSBO();
+    fillSSBO();
+
+    GLint maxComp = 0;
+    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &maxComp);
+    std::cerr << "GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: " << maxComp
+     << "\n";
 
     glutReshapeFunc(Reshape);
     glutKeyboardFunc(Key);

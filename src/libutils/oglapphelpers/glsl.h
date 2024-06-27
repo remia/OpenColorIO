@@ -62,7 +62,7 @@ class OpenGLBuilder
 
 public:
     // Create an OpenGL builder using the GPU shader information from a specific processor
-    static OpenGLBuilderRcPtr Create(const GpuShaderDescRcPtr & gpuShader);
+    static OpenGLBuilderRcPtr Create(const GpuShaderDescRcPtr & gpuShader, const std::string &override_fs = "");
 
     ~OpenGLBuilder();
 
@@ -88,7 +88,7 @@ public:
     static unsigned GetTextureMaxWidth();
 
 protected:
-    OpenGLBuilder(const GpuShaderDescRcPtr & gpuShader);
+    OpenGLBuilder(const GpuShaderDescRcPtr & gpuShader, const std::string &override_fs = "");
 
     // Prepare all the needed uniforms.
     void linkAllUniforms();
@@ -113,6 +113,7 @@ private:
     unsigned m_program;                    // Program identifier
     std::string m_shaderCacheID;           // Current shader program key
     bool m_verbose;                        // Print shader code to std::cout for debugging purposes
+    std::string m_override_fs;
 };
 
 } // namespace OCIO_NAMESPACE

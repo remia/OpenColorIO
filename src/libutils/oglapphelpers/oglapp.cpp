@@ -193,10 +193,10 @@ void OglApp::readImage(float * image)
     glReadPixels(0, 0, m_imageWidth, m_imageHeight, format, GL_FLOAT, (GLvoid*)&image[0]);
 }
 
-void OglApp::setShader(GpuShaderDescRcPtr & shaderDesc)
+void OglApp::setShader(GpuShaderDescRcPtr & shaderDesc, const std::string &override_fs)
 {
     // Create oglBuilder using the shaderDesc.
-    m_oglBuilder = OpenGLBuilder::Create(shaderDesc);
+    m_oglBuilder = OpenGLBuilder::Create(shaderDesc, override_fs);
     m_oglBuilder->setVerbose(m_printShader);
 
     // Allocate & upload all the LUTs in a dedicated GPU texture.
@@ -297,6 +297,11 @@ void ScreenApp::redisplay()
 {
     OglApp::redisplay();
     glutSwapBuffers();
+}
+
+void ScreenApp::redisplay_noswap()
+{
+    OglApp::redisplay();
 }
 
 void ScreenApp::printGLInfo() const noexcept

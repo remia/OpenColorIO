@@ -411,6 +411,8 @@ int main(int argc, const char **argv)
                 throw OCIO::Exception("Unsupported input bitdepth, must be uint8, uint16, half or float.");
             }
 
+            outputBitDepth = OCIO::BIT_DEPTH_F32;
+
             OCIO::ConstCPUProcessorRcPtr cpuProcessor
                 = processor->getOptimizedCPUProcessor(inputBitDepth,
                                                       outputBitDepth,
@@ -532,7 +534,7 @@ int main(int argc, const char **argv)
             imgOutput->attribute("oiio:ColorSpace", outputcolorspace);
         }
 
-        imgOutput->write(outputimage);
+        imgOutput->write(outputimage, OCIO::BIT_DEPTH_F32);
     }
     catch (...)
     {
