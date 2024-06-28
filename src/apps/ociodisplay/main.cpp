@@ -39,6 +39,10 @@ namespace OCIO = OCIO_NAMESPACE;
 
 #include "tables.h"
 
+
+#define HARDCODED_SHADER
+#define USE_SSBO // Else UBO
+
 bool g_verbose   = false;
 bool g_gpulegacy = false;
 bool g_gpuinfo   = false;
@@ -222,19 +226,21 @@ void genQueries()
     glEndQuery(GL_TIME_ELAPSED);
 }
 
-GLuint ssbo_id = 0;
-unsigned int ssbo_size = (4*360 + 360 + 4*360 + 360) * sizeof(float);
+#ifdef USE_SSBO
 
-void genSSBO()
+GLuint buffer_id = 0;
+unsigned int buffer_size = (4*360 + 360 + 4*360 + 360) * sizeof(float);
+
+void genBuffer()
 {
-    glCreateBuffers(1, &ssbo_id);
+    glCreateBuffers(1, &buffer_id);
 }
 
-void fillSSBO()
+void fillBuffer()
 {
-    glNamedBufferData(ssbo_id, ssbo_size, nullptr, GL_DYNAMIC_DRAW);
+    glNamedBufferData(buffer_id, buffer_size, nullptr, GL_DYNAMIC_DRAW);
 
-    float *buf = (float*) glMapNamedBuffer(ssbo_id, GL_WRITE_ONLY);
+    float *buf = (float*) glMapNamedBuffer(buffer_id, GL_WRITE_ONLY);
 
     memcpy(buf, reach_gamut_table, table_size*4*sizeof(float));
     buf += table_size*4;
@@ -248,10 +254,48 @@ void fillSSBO()
     memcpy(buf, upperHullGammaTable, table_size*sizeof(float));
     buf += table_size;
 
-    glUnmapNamedBuffer(ssbo_id);
+    glUnmapNamedBuffer(buffer_id);
 
     CheckStatus();
 }
+
+#else // Use UBO
+
+GLuint buffer_id = 0;
+unsigned int buffer_size = (4*360 + 360 + 4*360 + 360) * sizeof(float);
+
+void genBuffer()
+{
+    glGenBuffers(1, &buffer_id);
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer_id);
+    glBufferData(GL_UNIFORM_BUFFER, buffer_size, NULL, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void fillBuffer()
+{
+    glNamedBufferData(buffer_id, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+
+    float *buf = (float*) glMapNamedBuffer(buffer_id, GL_WRITE_ONLY);
+
+    memcpy(buf, reach_gamut_table, table_size*4*sizeof(float));
+    buf += table_size*4;
+
+    memcpy(buf, reach_cusp_table, table_size*sizeof(float));
+    buf += table_size;
+
+    memcpy(buf, gamut_cusp_table, table_size*4*sizeof(float));
+    buf += table_size*4;
+
+    memcpy(buf, upperHullGammaTable, table_size*sizeof(float));
+    buf += table_size;
+
+    glUnmapNamedBuffer(buffer_id);
+
+    CheckStatus();
+}
+
+#endif
 
 // aux function to keep the code simpler
 void swapQueryBuffers()
@@ -272,9 +316,15 @@ void Redisplay(void)
     {
         glBeginQuery(GL_TIME_ELAPSED, queryID[queryBackBuffer][0]);
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_id);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_id);
+#ifdef USE_SSBO
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer_id);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buffer_id);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+#else
+        glBindBuffer(GL_UNIFORM_BUFFER, buffer_id);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, buffer_id);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+#endif
 
         g_oglApp->redisplay_noswap();
         glEndQuery(GL_TIME_ELAPSED);
@@ -514,7 +564,6 @@ void UpdateOCIOGLState()
                     : processor->getOptimizedGPUProcessor(g_optimization);
     gpu->extractGpuShaderInfo(shaderDesc);
 
-#define HARDCODED_SHADER
 
 #ifdef HARDCODED_SHADER
 
@@ -798,14 +847,17 @@ int main(int argc, char **argv)
     g_oglApp->setPrintShader(g_gpuinfo);
 
     genQueries();
+    genBuffer();
+    fillBuffer();
 
-    genSSBO();
-    fillSSBO();
-
-    GLint maxComp = 0;
+    GLint maxLocs = 0, maxComp = 0, maxVec = 0;
+    glGetIntegerv(GL_MAX_UNIFORM_LOCATIONS, &maxLocs);
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &maxComp);
-    std::cerr << "GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: " << maxComp
-     << "\n";
+    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxVec);
+    std::cerr << "\n";
+    std::cerr << "GL_MAX_UNIFORM_LOCATIONS: " << maxLocs << "\n";
+    std::cerr << "GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: " << maxComp << "\n";
+    std::cerr << "GL_MAX_FRAGMENT_UNIFORM_VECTORS: " << maxVec << "\n";
 
     glutReshapeFunc(Reshape);
     glutKeyboardFunc(Key);

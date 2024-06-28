@@ -49,8 +49,6 @@ NVIDIA A40-12Q
     GPU ACES2 ~ 2.8 times slower
 
 
-
-
 TODO
 ----
 
