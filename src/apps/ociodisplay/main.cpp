@@ -226,10 +226,8 @@ void genQueries()
     glEndQuery(GL_TIME_ELAPSED);
 }
 
-#ifdef USE_SSBO
-
 GLuint buffer_id = 0;
-unsigned int buffer_size = (4*360 + 360 + 4*360 + 360) * sizeof(float);
+unsigned int buffer_size = (4*360 + 4*360 + 360 + 360) * sizeof(float);
 
 void genBuffer()
 {
@@ -238,18 +236,18 @@ void genBuffer()
 
 void fillBuffer()
 {
-    glNamedBufferData(buffer_id, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+    glNamedBufferData(buffer_id, buffer_size, nullptr, GL_STATIC_DRAW);
 
     float *buf = (float*) glMapNamedBuffer(buffer_id, GL_WRITE_ONLY);
 
     memcpy(buf, reach_gamut_table, table_size*4*sizeof(float));
     buf += table_size*4;
 
-    memcpy(buf, reach_cusp_table, table_size*sizeof(float));
-    buf += table_size;
-
     memcpy(buf, gamut_cusp_table, table_size*4*sizeof(float));
     buf += table_size*4;
+
+    memcpy(buf, reach_cusp_table, table_size*sizeof(float));
+    buf += table_size;
 
     memcpy(buf, upperHullGammaTable, table_size*sizeof(float));
     buf += table_size;
@@ -258,44 +256,6 @@ void fillBuffer()
 
     CheckStatus();
 }
-
-#else // Use UBO
-
-GLuint buffer_id = 0;
-unsigned int buffer_size = (4*360 + 360 + 4*360 + 360) * sizeof(float);
-
-void genBuffer()
-{
-    glGenBuffers(1, &buffer_id);
-    glBindBuffer(GL_UNIFORM_BUFFER, buffer_id);
-    glBufferData(GL_UNIFORM_BUFFER, buffer_size, NULL, GL_STATIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
-void fillBuffer()
-{
-    glNamedBufferData(buffer_id, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-
-    float *buf = (float*) glMapNamedBuffer(buffer_id, GL_WRITE_ONLY);
-
-    memcpy(buf, reach_gamut_table, table_size*4*sizeof(float));
-    buf += table_size*4;
-
-    memcpy(buf, reach_cusp_table, table_size*sizeof(float));
-    buf += table_size;
-
-    memcpy(buf, gamut_cusp_table, table_size*4*sizeof(float));
-    buf += table_size*4;
-
-    memcpy(buf, upperHullGammaTable, table_size*sizeof(float));
-    buf += table_size;
-
-    glUnmapNamedBuffer(buffer_id);
-
-    CheckStatus();
-}
-
-#endif
 
 // aux function to keep the code simpler
 void swapQueryBuffers()

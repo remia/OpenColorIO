@@ -17,8 +17,8 @@ const int table_size = 360;
 
 layout (std430, binding = 1) readonly buffer TablesBuffer {
     vec4 reach_gamut_table[table_size];
-    float reach_cusp_table[table_size];
     vec4 gamut_cusp_table[table_size];
+    float reach_cusp_table[table_size];
     float upperHullGammaTable[table_size];
 } tablesBuffer;
 
@@ -26,8 +26,8 @@ layout (std430, binding = 1) readonly buffer TablesBuffer {
 
 layout (std430, binding = 1) uniform TablesBuffer {
     vec4 reach_gamut_table[table_size];
-    float reach_cusp_table[table_size];
     vec4 gamut_cusp_table[table_size];
+    float reach_cusp_table[table_size];
     float upperHullGammaTable[table_size];
 } tablesBuffer;
 
@@ -1627,9 +1627,6 @@ int hue_position_in_uniform_table(float hue, int table_size)
 
 #ifdef USE_BUFFER
 vec2 cuspFromTable(float h, vec4 gt[table_size])
-#else
-vec2 cuspFromTable(float h, const vec3 gt[table_size])
-#endif
 {
     vec3 lo;
     vec3 hi;
@@ -1691,11 +1688,135 @@ vec2 cuspFromTable(float h, const vec3 gt[table_size])
     return vec2(cuspJ, cuspM);
 }
 
+#else
+
+vec2 gamutCuspFromTable(float h)
+{
+    vec3 lo;
+    vec3 hi;
+
+    if (h <= gamut_cusp_table[0][2])
+    {
+        lo[0] = gamut_cusp_table[table_size-1][0];
+        lo[1] = gamut_cusp_table[table_size-1][1];
+        lo[2] = gamut_cusp_table[table_size-1][2] - 360.f;
+
+        hi[0] = gamut_cusp_table[0][0];
+        hi[1] = gamut_cusp_table[0][1];
+        hi[2] = gamut_cusp_table[0][2];
+    }
+    else if (h >= gamut_cusp_table[table_size-1][2])
+    {
+        lo[0] = gamut_cusp_table[table_size-1][0];
+        lo[1] = gamut_cusp_table[table_size-1][1];
+        lo[2] = gamut_cusp_table[table_size-1][2];
+
+        hi[0] = gamut_cusp_table[0][0];
+        hi[1] = gamut_cusp_table[0][1];
+        hi[2] = gamut_cusp_table[0][2] + 360.f;
+    }
+    else
+    {
+        int low_i = 0;
+        int high_i = table_size;
+        // allowed as we have an extra entry in the table
+        int i = hue_position_in_uniform_table(h, table_size);
+
+        while (low_i + 1 < high_i)
+        {
+            if (h > gamut_cusp_table[i][2])
+            {
+                low_i = i;
+            }
+            else
+            {
+                high_i = i;
+            }
+            // TODO:
+            i = int((low_i + high_i) / 2.f);
+        }
+
+        lo[0] = gamut_cusp_table[high_i-1][0];
+        lo[1] = gamut_cusp_table[high_i-1][1];
+        lo[2] = gamut_cusp_table[high_i-1][2];
+
+        hi[0] = gamut_cusp_table[high_i][0];
+        hi[1] = gamut_cusp_table[high_i][1];
+        hi[2] = gamut_cusp_table[high_i][2];
+    }
+
+    float t = (h - lo[2]) / (hi[2] - lo[2]);
+    float cuspJ = mix(lo[0], hi[0], t);
+    float cuspM = mix(lo[1], hi[1], t);
+
+    return vec2(cuspJ, cuspM);
+}
+
+vec2 reachCuspFromTable(float h)
+{
+    vec3 lo;
+    vec3 hi;
+
+    if (h <= reach_gamut_table[0][2])
+    {
+        lo[0] = reach_gamut_table[table_size-1][0];
+        lo[1] = reach_gamut_table[table_size-1][1];
+        lo[2] = reach_gamut_table[table_size-1][2] - 360.f;
+
+        hi[0] = reach_gamut_table[0][0];
+        hi[1] = reach_gamut_table[0][1];
+        hi[2] = reach_gamut_table[0][2];
+    }
+    else if (h >= reach_gamut_table[table_size-1][2])
+    {
+        lo[0] = reach_gamut_table[table_size-1][0];
+        lo[1] = reach_gamut_table[table_size-1][1];
+        lo[2] = reach_gamut_table[table_size-1][2];
+
+        hi[0] = reach_gamut_table[0][0];
+        hi[1] = reach_gamut_table[0][1];
+        hi[2] = reach_gamut_table[0][2] + 360.f;
+    }
+    else
+    {
+        int low_i = 0;
+        int high_i = table_size;
+        // allowed as we have an extra entry in the table
+        int i = hue_position_in_uniform_table(h, table_size);
+
+        while (low_i + 1 < high_i)
+        {
+            if (h > reach_gamut_table[i][2])
+            {
+                low_i = i;
+            }
+            else
+            {
+                high_i = i;
+            }
+            // TODO:
+            i = int((low_i + high_i) / 2.f);
+        }
+
+        lo[0] = reach_gamut_table[high_i-1][0];
+        lo[1] = reach_gamut_table[high_i-1][1];
+        lo[2] = reach_gamut_table[high_i-1][2];
+
+        hi[0] = reach_gamut_table[high_i][0];
+        hi[1] = reach_gamut_table[high_i][1];
+        hi[2] = reach_gamut_table[high_i][2];
+    }
+
+    float t = (h - lo[2]) / (hi[2] - lo[2]);
+    float cuspJ = mix(lo[0], hi[0], t);
+    float cuspM = mix(lo[1], hi[1], t);
+
+    return vec2(cuspJ, cuspM);
+}
+#endif
+
 #ifdef USE_BUFFER
 float reachFromTable(float h, float gt[table_size])
-#else
-float reachFromTable(float h, const float gt[table_size])
-#endif
 {
     int i_lo = hue_position_in_uniform_table( h, table_size);
     int i_hi = next_position_in_table( i_lo, table_size);
@@ -1707,6 +1828,20 @@ float reachFromTable(float h, const float gt[table_size])
 
     return mix(lo, hi, t);
 }
+#else
+float reachFromTable(float h)
+{
+    int i_lo = hue_position_in_uniform_table( h, table_size);
+    int i_hi = next_position_in_table( i_lo, table_size);
+
+    float lo = reach_cusp_table[i_lo];
+    float hi = reach_cusp_table[i_hi];
+
+    float t = (h - i_lo) / (i_hi - i_lo);
+
+    return mix(lo, hi, t);
+}
+#endif
 
 float toe( float x, float limit, float k1_in, float k2_in)
 {
@@ -1798,7 +1933,7 @@ vec3 get_reach_boundary(float J, float M, float h)
 #ifdef USE_BUFFER
     vec2 JMcusp = cuspFromTable(h, tablesBuffer.gamut_cusp_table);
 #else
-    vec2 JMcusp = cuspFromTable(h, gamut_cusp_table);
+    vec2 JMcusp = gamutCuspFromTable(h);
 #endif
 
     float focusJ = mix(JMcusp[0], mid_J, min(1.f, cusp_mid_blend - (JMcusp[0] / limit_J_max)));
@@ -1820,6 +1955,7 @@ vec3 get_reach_boundary(float J, float M, float h)
     return vec3(J, boundary, h);
 }
 
+#ifdef USE_BUFFER
 float hueDependentUpperHullGamma(float h, float gt[table_size])
 {
     int i_lo = hue_position_in_uniform_table(h, table_size);
@@ -1830,6 +1966,18 @@ float hueDependentUpperHullGamma(float h, float gt[table_size])
 
     return mix(gt[i_lo], gt[i_hi], t);
 }
+#else
+float hueDependentUpperHullGamma(float h)
+{
+    int i_lo = hue_position_in_uniform_table(h, table_size);
+    int i_hi = next_position_in_table(i_lo, table_size);
+
+    float base_hue = base_hue_for_position(i_lo, table_size);
+    float t = wrap_to_360(h) - base_hue;
+
+    return mix(upperHullGammaTable[i_lo], upperHullGammaTable[i_hi], t);
+}
+#endif
 
 vec3 find_gamut_boundary_intersection(vec3 JMh_s, vec2 JM_cusp_in, float J_focus, float J_max, float slope_gain, float gamma_top, float gamma_bottom)
 {
@@ -1968,8 +2116,8 @@ vec4 OCIODisplay(vec4 inPixel)
             float Mnorm = cuspFromTable(h, tablesBuffer.reach_gamut_table)[1];
             float limit = pow(nJ, model_gamma) * reachFromTable(h, tablesBuffer.reach_cusp_table) / Mnorm;
 #else
-            float Mnorm = cuspFromTable(h, reach_gamut_table)[1];
-            float limit = pow(nJ, model_gamma) * reachFromTable(h, reach_cusp_table) / Mnorm;
+            float Mnorm = reachCuspFromTable(h)[1];
+            float limit = pow(nJ, model_gamma) * reachFromTable(h) / Mnorm;
 #endif
 
             M = M * pow(J / origJ, model_gamma);
@@ -1995,7 +2143,7 @@ vec4 OCIODisplay(vec4 inPixel)
 #ifdef USE_BUFFER
         vec2 JMcusp = cuspFromTable(h, tablesBuffer.gamut_cusp_table);
 #else
-        vec2 JMcusp = cuspFromTable(h, gamut_cusp_table);
+        vec2 JMcusp = gamutCuspFromTable(h);
 #endif
 
         if (M < 0.0001f || J > limit_J_max)
@@ -2009,7 +2157,7 @@ vec4 OCIODisplay(vec4 inPixel)
 #ifdef USE_BUFFER
         float gamma_top = hueDependentUpperHullGamma(h, tablesBuffer.upperHullGammaTable);
 #else
-        float gamma_top = hueDependentUpperHullGamma(h, upperHullGammaTable);
+        float gamma_top = hueDependentUpperHullGamma(h);
 #endif
         float gamma_bottom = lower_hull_gamma;
 

@@ -49,6 +49,15 @@ NVIDIA A40-12Q
     GPU ACES2 ~ 2.8 times slower
 
 
+3840x2007 viewport  (Marcie)
+    GPU ACES2 - const buffer arrays ~ 67ms for 10 iterations 4K or 6.7ms
+    GPU ACES2 - const buffer arrays and no arrays argument passing to functions ~ 51ms for 10 iterations 4K or 5.1ms
+    GPU ACES2 - ssbo ~ 4.5ms for 10 iterations 4K or 0.45ms
+    GPU ACES2 - ubo (std430) ~ 41ms for 10 iterations 4K or 4.1ms
+    GPU ACES2 - ubo (packed) ~ 41ms for 10 iterations 4K or 4.2ms
+    GPU ACES2 - ubo (std140) float array padded to 4 floats ~ 52ms for 10 iterations 4K or 5.2ms
+
+
 TODO
 ----
 
