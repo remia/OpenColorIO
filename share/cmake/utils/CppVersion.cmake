@@ -5,7 +5,7 @@
 ###############################################################################
 # C++ version configuration
 
-set(SUPPORTED_CXX_STANDARDS 11 14 17)
+set(SUPPORTED_CXX_STANDARDS 14 17 20 23)
 string(REPLACE ";" ", " SUPPORTED_CXX_STANDARDS_STR "${SUPPORTED_CXX_STANDARDS}")
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
@@ -27,20 +27,6 @@ if(USE_MSVC)
     set(CUSTOM_CXX_FLAGS "/w")
 else()
     set(CUSTOM_CXX_FLAGS "-w")
-endif()
-
-if(${CMAKE_CXX_STANDARD} EQUAL 11)
-    if(USE_MSVC)
-        CHECK_CXX_COMPILER_FLAG("${CUSTOM_CXX_FLAGS} -std:c++11" COMPILER_SUPPORTS_CXX11)
-    else()
-        CHECK_CXX_COMPILER_FLAG("${CUSTOM_CXX_FLAGS} -std=c++11" COMPILER_SUPPORTS_CXX11)
-    endif()
-
-    if(NOT COMPILER_SUPPORTS_CXX11)
-        message(STATUS 
-            "The compiler ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} has no C++11 only support. Use C++14.")
-        set(CMAKE_CXX_STANDARD 14)
-    endif()
 endif()
 
 if(${CMAKE_CXX_STANDARD} EQUAL 14)
