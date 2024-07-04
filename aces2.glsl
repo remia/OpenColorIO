@@ -3,15 +3,9 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 #extension GL_ARB_uniform_buffer_object : enable
 #extension GL_NV_uniform_buffer_std430_layout : enable
+#extension GL_ARB_shading_language_420pack : enable
 
-// Use uniform buffer array to avoid the following error:
-// cannot locate suitable resource to bind variable "@TMP494". Possibly large array
 const int table_size = 360;
-
-#define USE_BUFFER
-#define USE_SSBO
-
-#ifdef USE_BUFFER
 
 #ifdef USE_SSBO
 
@@ -19,19 +13,39 @@ layout (std430, binding = 1) readonly buffer TablesBuffer {
     vec4 reach_gamut_table[table_size];
     vec4 gamut_cusp_table[table_size];
     float reach_cusp_table[table_size];
-    float upperHullGammaTable[table_size];
-} tablesBuffer;
+    float upper_hull_gamma_table[table_size];
+} ssboBuffer;
 
-#else
+#define SAMPLE_REACH_GAMUT(h) ssboBuffer.reach_gamut_table[h]
+#define SAMPLE_GAMUT_CUSP(h) ssboBuffer.gamut_cusp_table[h]
+#define SAMPLE_REACH_CUSP(h) ssboBuffer.reach_cusp_table[h]
+#define SAMPLE_UPPER_GAMMA(h) ssboBuffer.upper_hull_gamma_table[h]
+
+#elif defined USE_UBO
 
 layout (std430, binding = 1) uniform TablesBuffer {
     vec4 reach_gamut_table[table_size];
     vec4 gamut_cusp_table[table_size];
     float reach_cusp_table[table_size];
-    float upperHullGammaTable[table_size];
-} tablesBuffer;
+    float upper_hull_gamma_table[table_size];
+} uboBuffer;
 
-#endif
+#define SAMPLE_REACH_GAMUT(h) uboBuffer.reach_gamut_table[h]
+#define SAMPLE_GAMUT_CUSP(h) uboBuffer.gamut_cusp_table[h]
+#define SAMPLE_REACH_CUSP(h) uboBuffer.reach_cusp_table[h]
+#define SAMPLE_UPPER_GAMMA(h) uboBuffer.upper_hull_gamma_table[h]
+
+#elif defined USE_TEXTURE
+
+layout (binding = 2) uniform sampler1D reach_gamut_tex;
+layout (binding = 3) uniform sampler1D gamut_cusp_tex;
+layout (binding = 4) uniform sampler1D reach_cusp_tex;
+layout (binding = 5) uniform sampler1D upper_hull_gamma_tex;
+
+#define SAMPLE_REACH_GAMUT(h) texelFetch(reach_gamut_tex, h, 0).rgb
+#define SAMPLE_GAMUT_CUSP(h) texelFetch(gamut_cusp_tex, h, 0).rgb
+#define SAMPLE_REACH_CUSP(h) texelFetch(reach_cusp_tex, h, 0).r
+#define SAMPLE_UPPER_GAMMA(h) texelFetch(upper_hull_gamma_tex, h, 0).r
 
 #else
 
@@ -1124,7 +1138,7 @@ const vec3 gamut_cusp_table[table_size] = vec3[](
     vec3(54.323745728,   68.563339233,   359.740875244)
 );
 
-const float upperHullGammaTable[table_size] = float[](
+const float upper_hull_gamma_table[table_size] = float[](
     0.888256788,
     0.887408376,
     0.886523426,
@@ -1487,8 +1501,12 @@ const float upperHullGammaTable[table_size] = float[](
     0.889123559
 );
 
-#endif
+#define SAMPLE_REACH_GAMUT(h) reach_gamut_table[h]
+#define SAMPLE_GAMUT_CUSP(h) gamut_cusp_table[h]
+#define SAMPLE_REACH_CUSP(h) reach_cusp_table[h]
+#define SAMPLE_UPPER_GAMMA(h) upper_hull_gamma_table[h]
 
+#endif
 
 #define M_PI 3.1415926535897932384626433832795
 
@@ -1625,95 +1643,30 @@ int hue_position_in_uniform_table(float hue, int table_size)
     return result;
 }
 
-#ifdef USE_BUFFER
-vec2 cuspFromTable(float h, vec4 gt[table_size])
-{
-    vec3 lo;
-    vec3 hi;
-
-    if (h <= gt[0][2])
-    {
-        lo[0] = gt[table_size-1][0];
-        lo[1] = gt[table_size-1][1];
-        lo[2] = gt[table_size-1][2] - 360.f;
-
-        hi[0] = gt[0][0];
-        hi[1] = gt[0][1];
-        hi[2] = gt[0][2];
-    }
-    else if (h >= gt[table_size-1][2])
-    {
-        lo[0] = gt[table_size-1][0];
-        lo[1] = gt[table_size-1][1];
-        lo[2] = gt[table_size-1][2];
-
-        hi[0] = gt[0][0];
-        hi[1] = gt[0][1];
-        hi[2] = gt[0][2] + 360.f;
-    }
-    else
-    {
-        int low_i = 0;
-        int high_i = table_size;
-        // allowed as we have an extra entry in the table
-        int i = hue_position_in_uniform_table(h, table_size);
-
-        while (low_i + 1 < high_i)
-        {
-            if (h > gt[i][2])
-            {
-                low_i = i;
-            }
-            else
-            {
-                high_i = i;
-            }
-            // TODO:
-            i = int((low_i + high_i) / 2.f);
-        }
-
-        lo[0] = gt[high_i-1][0];
-        lo[1] = gt[high_i-1][1];
-        lo[2] = gt[high_i-1][2];
-
-        hi[0] = gt[high_i][0];
-        hi[1] = gt[high_i][1];
-        hi[2] = gt[high_i][2];
-    }
-
-    float t = (h - lo[2]) / (hi[2] - lo[2]);
-    float cuspJ = mix(lo[0], hi[0], t);
-    float cuspM = mix(lo[1], hi[1], t);
-
-    return vec2(cuspJ, cuspM);
-}
-
-#else
-
 vec2 gamutCuspFromTable(float h)
 {
     vec3 lo;
     vec3 hi;
 
-    if (h <= gamut_cusp_table[0][2])
+    if (h <= SAMPLE_GAMUT_CUSP(0)[2])
     {
-        lo[0] = gamut_cusp_table[table_size-1][0];
-        lo[1] = gamut_cusp_table[table_size-1][1];
-        lo[2] = gamut_cusp_table[table_size-1][2] - 360.f;
+        lo[0] = SAMPLE_GAMUT_CUSP(table_size-1)[0];
+        lo[1] = SAMPLE_GAMUT_CUSP(table_size-1)[1];
+        lo[2] = SAMPLE_GAMUT_CUSP(table_size-1)[2] - 360.f;
 
-        hi[0] = gamut_cusp_table[0][0];
-        hi[1] = gamut_cusp_table[0][1];
-        hi[2] = gamut_cusp_table[0][2];
+        hi[0] = SAMPLE_GAMUT_CUSP(0)[0];
+        hi[1] = SAMPLE_GAMUT_CUSP(0)[1];
+        hi[2] = SAMPLE_GAMUT_CUSP(0)[2];
     }
-    else if (h >= gamut_cusp_table[table_size-1][2])
+    else if (h >= SAMPLE_GAMUT_CUSP(table_size-1)[2])
     {
-        lo[0] = gamut_cusp_table[table_size-1][0];
-        lo[1] = gamut_cusp_table[table_size-1][1];
-        lo[2] = gamut_cusp_table[table_size-1][2];
+        lo[0] = SAMPLE_GAMUT_CUSP(table_size-1)[0];
+        lo[1] = SAMPLE_GAMUT_CUSP(table_size-1)[1];
+        lo[2] = SAMPLE_GAMUT_CUSP(table_size-1)[2];
 
-        hi[0] = gamut_cusp_table[0][0];
-        hi[1] = gamut_cusp_table[0][1];
-        hi[2] = gamut_cusp_table[0][2] + 360.f;
+        hi[0] = SAMPLE_GAMUT_CUSP(0)[0];
+        hi[1] = SAMPLE_GAMUT_CUSP(0)[1];
+        hi[2] = SAMPLE_GAMUT_CUSP(0)[2] + 360.f;
     }
     else
     {
@@ -1724,7 +1677,7 @@ vec2 gamutCuspFromTable(float h)
 
         while (low_i + 1 < high_i)
         {
-            if (h > gamut_cusp_table[i][2])
+            if (h > SAMPLE_GAMUT_CUSP(i)[2])
             {
                 low_i = i;
             }
@@ -1736,13 +1689,13 @@ vec2 gamutCuspFromTable(float h)
             i = int((low_i + high_i) / 2.f);
         }
 
-        lo[0] = gamut_cusp_table[high_i-1][0];
-        lo[1] = gamut_cusp_table[high_i-1][1];
-        lo[2] = gamut_cusp_table[high_i-1][2];
+        lo[0] = SAMPLE_GAMUT_CUSP(high_i-1)[0];
+        lo[1] = SAMPLE_GAMUT_CUSP(high_i-1)[1];
+        lo[2] = SAMPLE_GAMUT_CUSP(high_i-1)[2];
 
-        hi[0] = gamut_cusp_table[high_i][0];
-        hi[1] = gamut_cusp_table[high_i][1];
-        hi[2] = gamut_cusp_table[high_i][2];
+        hi[0] = SAMPLE_GAMUT_CUSP(high_i)[0];
+        hi[1] = SAMPLE_GAMUT_CUSP(high_i)[1];
+        hi[2] = SAMPLE_GAMUT_CUSP(high_i)[2];
     }
 
     float t = (h - lo[2]) / (hi[2] - lo[2]);
@@ -1757,25 +1710,25 @@ vec2 reachCuspFromTable(float h)
     vec3 lo;
     vec3 hi;
 
-    if (h <= reach_gamut_table[0][2])
+    if (h <= SAMPLE_REACH_GAMUT(0)[2])
     {
-        lo[0] = reach_gamut_table[table_size-1][0];
-        lo[1] = reach_gamut_table[table_size-1][1];
-        lo[2] = reach_gamut_table[table_size-1][2] - 360.f;
+        lo[0] = SAMPLE_REACH_GAMUT(table_size-1)[0];
+        lo[1] = SAMPLE_REACH_GAMUT(table_size-1)[1];
+        lo[2] = SAMPLE_REACH_GAMUT(table_size-1)[2] - 360.f;
 
-        hi[0] = reach_gamut_table[0][0];
-        hi[1] = reach_gamut_table[0][1];
-        hi[2] = reach_gamut_table[0][2];
+        hi[0] = SAMPLE_REACH_GAMUT(0)[0];
+        hi[1] = SAMPLE_REACH_GAMUT(0)[1];
+        hi[2] = SAMPLE_REACH_GAMUT(0)[2];
     }
-    else if (h >= reach_gamut_table[table_size-1][2])
+    else if (h >= SAMPLE_REACH_GAMUT(table_size-1)[2])
     {
-        lo[0] = reach_gamut_table[table_size-1][0];
-        lo[1] = reach_gamut_table[table_size-1][1];
-        lo[2] = reach_gamut_table[table_size-1][2];
+        lo[0] = SAMPLE_REACH_GAMUT(table_size-1)[0];
+        lo[1] = SAMPLE_REACH_GAMUT(table_size-1)[1];
+        lo[2] = SAMPLE_REACH_GAMUT(table_size-1)[2];
 
-        hi[0] = reach_gamut_table[0][0];
-        hi[1] = reach_gamut_table[0][1];
-        hi[2] = reach_gamut_table[0][2] + 360.f;
+        hi[0] = SAMPLE_REACH_GAMUT(0)[0];
+        hi[1] = SAMPLE_REACH_GAMUT(0)[1];
+        hi[2] = SAMPLE_REACH_GAMUT(0)[2] + 360.f;
     }
     else
     {
@@ -1786,7 +1739,7 @@ vec2 reachCuspFromTable(float h)
 
         while (low_i + 1 < high_i)
         {
-            if (h > reach_gamut_table[i][2])
+            if (h > SAMPLE_REACH_GAMUT(i)[2])
             {
                 low_i = i;
             }
@@ -1798,13 +1751,13 @@ vec2 reachCuspFromTable(float h)
             i = int((low_i + high_i) / 2.f);
         }
 
-        lo[0] = reach_gamut_table[high_i-1][0];
-        lo[1] = reach_gamut_table[high_i-1][1];
-        lo[2] = reach_gamut_table[high_i-1][2];
+        lo[0] = SAMPLE_REACH_GAMUT(high_i-1)[0];
+        lo[1] = SAMPLE_REACH_GAMUT(high_i-1)[1];
+        lo[2] = SAMPLE_REACH_GAMUT(high_i-1)[2];
 
-        hi[0] = reach_gamut_table[high_i][0];
-        hi[1] = reach_gamut_table[high_i][1];
-        hi[2] = reach_gamut_table[high_i][2];
+        hi[0] = SAMPLE_REACH_GAMUT(high_i)[0];
+        hi[1] = SAMPLE_REACH_GAMUT(high_i)[1];
+        hi[2] = SAMPLE_REACH_GAMUT(high_i)[2];
     }
 
     float t = (h - lo[2]) / (hi[2] - lo[2]);
@@ -1813,35 +1766,19 @@ vec2 reachCuspFromTable(float h)
 
     return vec2(cuspJ, cuspM);
 }
-#endif
 
-#ifdef USE_BUFFER
-float reachFromTable(float h, float gt[table_size])
-{
-    int i_lo = hue_position_in_uniform_table( h, table_size);
-    int i_hi = next_position_in_table( i_lo, table_size);
-
-    float lo = gt[i_lo];
-    float hi = gt[i_hi];
-
-    float t = (h - i_lo) / (i_hi - i_lo);
-
-    return mix(lo, hi, t);
-}
-#else
 float reachFromTable(float h)
 {
     int i_lo = hue_position_in_uniform_table( h, table_size);
     int i_hi = next_position_in_table( i_lo, table_size);
 
-    float lo = reach_cusp_table[i_lo];
-    float hi = reach_cusp_table[i_hi];
+    float lo = SAMPLE_REACH_CUSP(i_lo);
+    float hi = SAMPLE_REACH_CUSP(i_hi);
 
     float t = (h - i_lo) / (i_hi - i_lo);
 
     return mix(lo, hi, t);
 }
-#endif
 
 float toe( float x, float limit, float k1_in, float k2_in)
 {
@@ -1918,23 +1855,14 @@ vec3 get_reach_boundary(float J, float M, float h)
     int i_lo = hue_position_in_uniform_table(h, table_size);
     int i_hi = next_position_in_table(i_lo, table_size);
 
-#ifdef USE_BUFFER
-    float lo = tablesBuffer.reach_cusp_table[i_lo];
-    float hi = tablesBuffer.reach_cusp_table[i_hi];
-#else
-    float lo = reach_cusp_table[i_lo];
-    float hi = reach_cusp_table[i_hi];
-#endif
+    float lo = SAMPLE_REACH_CUSP(i_lo);
+    float hi = SAMPLE_REACH_CUSP(i_hi);
 
     float t = (h - i_lo) / (360.f / table_size);
 
     float reachMaxM = mix(lo, hi, t);
 
-#ifdef USE_BUFFER
-    vec2 JMcusp = cuspFromTable(h, tablesBuffer.gamut_cusp_table);
-#else
     vec2 JMcusp = gamutCuspFromTable(h);
-#endif
 
     float focusJ = mix(JMcusp[0], mid_J, min(1.f, cusp_mid_blend - (JMcusp[0] / limit_J_max)));
     float slope_gain = limit_J_max * focus_dist * get_focus_gain(J, JMcusp[0], limit_J_max);
@@ -1955,18 +1883,6 @@ vec3 get_reach_boundary(float J, float M, float h)
     return vec3(J, boundary, h);
 }
 
-#ifdef USE_BUFFER
-float hueDependentUpperHullGamma(float h, float gt[table_size])
-{
-    int i_lo = hue_position_in_uniform_table(h, table_size);
-    int i_hi = next_position_in_table(i_lo, table_size);
-
-    float base_hue = base_hue_for_position(i_lo, table_size);
-    float t = wrap_to_360(h) - base_hue;
-
-    return mix(gt[i_lo], gt[i_hi], t);
-}
-#else
 float hueDependentUpperHullGamma(float h)
 {
     int i_lo = hue_position_in_uniform_table(h, table_size);
@@ -1975,9 +1891,8 @@ float hueDependentUpperHullGamma(float h)
     float base_hue = base_hue_for_position(i_lo, table_size);
     float t = wrap_to_360(h) - base_hue;
 
-    return mix(upperHullGammaTable[i_lo], upperHullGammaTable[i_hi], t);
+    return mix(SAMPLE_UPPER_GAMMA(i_lo), SAMPLE_UPPER_GAMMA(i_hi), t);
 }
-#endif
 
 vec3 find_gamut_boundary_intersection(vec3 JMh_s, vec2 JM_cusp_in, float J_focus, float J_max, float slope_gain, float gamma_top, float gamma_bottom)
 {
@@ -2112,13 +2027,8 @@ vec4 OCIODisplay(vec4 inPixel)
         {
             float nJ = J / limit_J_max;
             float snJ = max(0.f, 1.f - nJ);
-#ifdef USE_BUFFER
-            float Mnorm = cuspFromTable(h, tablesBuffer.reach_gamut_table)[1];
-            float limit = pow(nJ, model_gamma) * reachFromTable(h, tablesBuffer.reach_cusp_table) / Mnorm;
-#else
             float Mnorm = reachCuspFromTable(h)[1];
             float limit = pow(nJ, model_gamma) * reachFromTable(h) / Mnorm;
-#endif
 
             M = M * pow(J / origJ, model_gamma);
             M = M / Mnorm;
@@ -2140,11 +2050,7 @@ vec4 OCIODisplay(vec4 inPixel)
         float h = outColor[2];
 
         vec2 project_from = vec2(J, M);
-#ifdef USE_BUFFER
-        vec2 JMcusp = cuspFromTable(h, tablesBuffer.gamut_cusp_table);
-#else
         vec2 JMcusp = gamutCuspFromTable(h);
-#endif
 
         if (M < 0.0001f || J > limit_J_max)
         {
@@ -2154,11 +2060,7 @@ vec4 OCIODisplay(vec4 inPixel)
         float focusJ = mix(JMcusp[0], mid_J, min(1.f, cusp_mid_blend - (JMcusp[0] / limit_J_max)));
         float slope_gain = limit_J_max * focus_dist * get_focus_gain(Jx, JMcusp[0], limit_J_max);
 
-#ifdef USE_BUFFER
-        float gamma_top = hueDependentUpperHullGamma(h, tablesBuffer.upperHullGammaTable);
-#else
         float gamma_top = hueDependentUpperHullGamma(h);
-#endif
         float gamma_bottom = lower_hull_gamma;
 
         vec3 boundaryReturn = find_gamut_boundary_intersection(JMh, JMcusp, focusJ, limit_J_max, slope_gain, gamma_top, gamma_bottom);

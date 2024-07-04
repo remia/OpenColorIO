@@ -1091,7 +1091,7 @@ const float gamut_cusp_table[table_size*4] = {
     54.323745728,   68.563339233,   359.740875244, 0.0
 };
 
-const float upperHullGammaTable[table_size] = {
+const float upper_hull_gamma_table[table_size] = {
     0.888256788,
     0.887408376,
     0.886523426,

@@ -41,7 +41,13 @@ namespace OCIO = OCIO_NAMESPACE;
 
 
 #define HARDCODED_SHADER
-#define USE_SSBO // Else UBO
+constexpr auto SHADER_PATH = "/user_data/RND/dev/OpenColorIO/aces2.glsl";
+
+#define OPENGL_DEBUG_CB
+#define OPENGL_QUERY
+#define USE_SSBO
+// #define USE_UBO
+// #define USE_TEXTURE
 
 bool g_verbose   = false;
 bool g_gpulegacy = false;
@@ -73,29 +79,116 @@ int g_channelHot[4]{ 1, 1, 1, 1 };  // show rgb
 
 OCIO::OglAppRcPtr g_oglApp;
 
-bool GetGLError(std::string & error)
-{
-    const GLenum glErr = glGetError();
-    if(glErr!=GL_NO_ERROR)
-    {
-#ifdef __APPLE__
-        // Unfortunately no gluErrorString equivalent on Mac.
-        error = "OpenGL Error";
-#else
-        error = (const char*)gluErrorString(glErr);
-#endif
-        return true;
-    }
-    return false;
-}
+void debug_message_callback(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei,
+    const GLchar *msg,
+    const void *) {
 
-void CheckStatus()
-{
-    std::string error;
-    if (GetGLError(error))
-    {
-        throw OCIO::Exception(error.c_str());
+    std::string _source;
+    std::string _type;
+    std::string _severity;
+
+    switch (source) {
+        case GL_DEBUG_SOURCE_API:
+        _source = "API";
+        break;
+
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+        _source = "WINDOW SYSTEM";
+        break;
+
+        case GL_DEBUG_SOURCE_SHADER_COMPILER:
+        _source = "SHADER COMPILER";
+        break;
+
+        case GL_DEBUG_SOURCE_THIRD_PARTY:
+        _source = "THIRD PARTY";
+        break;
+
+        case GL_DEBUG_SOURCE_APPLICATION:
+        _source = "APPLICATION";
+        break;
+
+        case GL_DEBUG_SOURCE_OTHER:
+        _source = "OTHER";
+        break;
+
+        default:
+        _source = "UNKNOWN";
+        break;
     }
+
+    switch (type) {
+        case GL_DEBUG_TYPE_ERROR:
+        _type = "ERROR";
+        break;
+
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        _type = "DEPRECATED BEHAVIOR";
+        break;
+
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        _type = "UNDEFINED BEHAVIOR";
+        break;
+
+        case GL_DEBUG_TYPE_PORTABILITY:
+        _type = "PORTABILITY";
+        break;
+
+        case GL_DEBUG_TYPE_PERFORMANCE:
+        _type = "PERFORMANCE";
+        break;
+
+        case GL_DEBUG_TYPE_OTHER:
+        _type = "OTHER";
+        break;
+
+        case GL_DEBUG_TYPE_MARKER:
+        _type = "MARKER";
+        break;
+
+        default:
+        _type = "UNKNOWN";
+        break;
+    }
+
+    switch (severity) {
+        case GL_DEBUG_SEVERITY_HIGH:
+        _severity = "HIGH";
+        break;
+
+        case GL_DEBUG_SEVERITY_MEDIUM:
+        _severity = "MEDIUM";
+        break;
+
+        case GL_DEBUG_SEVERITY_LOW:
+        _severity = "LOW";
+        break;
+
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+        _severity = "NOTIFICATION";
+        break;
+
+        default:
+        _severity = "UNKNOWN";
+        break;
+    }
+
+    if (severity == GL_DEBUG_SEVERITY_HIGH) {
+        std::cerr
+            << id << ": " << _type
+            << " of " << _severity << " severity, raised from "
+            << _source << ": " << msg << "\n";
+    }
+
+    // Uncomment to allow simple gdb usage, if GL_DEBUG_OUTPUT_SYNCHRONOUS
+    // is enabled, the stacktrace in gdb will directly point to the
+    // problematic opengl call.
+    // std::raise(SIGINT);
 }
 
 void UpdateOCIOGLState();
@@ -204,99 +297,142 @@ void InitOCIO(const char * filename)
     }
 }
 
-// two query buffers: front and back
-#define QUERY_BUFFERS 2
-// the number of required queries
-// in this example there is only one query per frame
-#define QUERY_COUNT 1
-// the array to store the two sets of queries.
-unsigned int queryID[QUERY_BUFFERS][QUERY_COUNT];
-unsigned int queryBackBuffer = 0, queryFrontBuffer = 1;
+#ifdef OPENGL_QUERY
 
-// call this function when initializating the OpenGL settings
-void genQueries()
-{
-    glGenQueries(QUERY_COUNT, queryID[queryBackBuffer]);
-    glGenQueries(QUERY_COUNT, queryID[queryFrontBuffer]);
+    // two query buffers: front and back
+    #define QUERY_BUFFERS 2
+    // the number of required queries
+    // in this example there is only one query per frame
+    #define QUERY_COUNT 1
+    // the array to store the two sets of queries.
+    unsigned int queryID[QUERY_BUFFERS][QUERY_COUNT];
+    unsigned int queryBackBuffer = 0, queryFrontBuffer = 1;
 
-    // dummy query to prevent OpenGL errors from popping out
-    // for the first frame, the previous (front buffer) query
-    // would otherwise be empty
-    glBeginQuery(GL_TIME_ELAPSED, queryID[queryFrontBuffer][0]);
-    glEndQuery(GL_TIME_ELAPSED);
-}
+    // call this function when initializating the OpenGL settings
+    void genQueries()
+    {
+        glGenQueries(QUERY_COUNT, queryID[queryBackBuffer]);
+        glGenQueries(QUERY_COUNT, queryID[queryFrontBuffer]);
 
-GLuint buffer_id = 0;
-unsigned int buffer_size = (4*360 + 4*360 + 360 + 360) * sizeof(float);
-
-void genBuffer()
-{
-    glCreateBuffers(1, &buffer_id);
-}
-
-void fillBuffer()
-{
-    glNamedBufferData(buffer_id, buffer_size, nullptr, GL_STATIC_DRAW);
-
-    float *buf = (float*) glMapNamedBuffer(buffer_id, GL_WRITE_ONLY);
-
-    memcpy(buf, reach_gamut_table, table_size*4*sizeof(float));
-    buf += table_size*4;
-
-    memcpy(buf, gamut_cusp_table, table_size*4*sizeof(float));
-    buf += table_size*4;
-
-    memcpy(buf, reach_cusp_table, table_size*sizeof(float));
-    buf += table_size;
-
-    memcpy(buf, upperHullGammaTable, table_size*sizeof(float));
-    buf += table_size;
-
-    glUnmapNamedBuffer(buffer_id);
-
-    CheckStatus();
-}
-
-// aux function to keep the code simpler
-void swapQueryBuffers()
-{
-    if (queryBackBuffer) {
-        queryBackBuffer = 0;
-        queryFrontBuffer = 1;
+        // dummy query to prevent OpenGL errors from popping out
+        // for the first frame, the previous (front buffer) query
+        // would otherwise be empty
+        glBeginQuery(GL_TIME_ELAPSED, queryID[queryFrontBuffer][0]);
+        glEndQuery(GL_TIME_ELAPSED);
     }
-    else {
-        queryBackBuffer = 1;
-        queryFrontBuffer = 0;
+
+    void swapQueryBuffers()
+    {
+        if (queryBackBuffer) {
+            queryBackBuffer = 0;
+            queryFrontBuffer = 1;
+        }
+        else {
+            queryBackBuffer = 1;
+            queryFrontBuffer = 0;
+        }
     }
-}
+
+#endif
+
+#if defined USE_UBO || defined USE_SSBO
+
+    GLuint buffer_id = 0;
+    unsigned int buffer_size = (4*360 + 4*360 + 360 + 360) * sizeof(float);
+
+    void genBuffer()
+    {
+        glCreateBuffers(1, &buffer_id);
+    }
+
+    void fillBuffer()
+    {
+        glNamedBufferData(buffer_id, buffer_size, nullptr, GL_STATIC_DRAW);
+
+        float *buf = (float*) glMapNamedBuffer(buffer_id, GL_WRITE_ONLY);
+
+        memcpy(buf, reach_gamut_table, table_size*4*sizeof(float));
+        buf += table_size*4;
+
+        memcpy(buf, gamut_cusp_table, table_size*4*sizeof(float));
+        buf += table_size*4;
+
+        memcpy(buf, reach_cusp_table, table_size*sizeof(float));
+        buf += table_size;
+
+        memcpy(buf, upper_hull_gamma_table, table_size*sizeof(float));
+        buf += table_size;
+
+        glUnmapNamedBuffer(buffer_id);
+    }
+
+#elif defined USE_TEXTURE
+
+    const GLsizei tex_width = 360;
+    GLuint tex_id[4] {0, 0, 0, 0};
+
+    void genBuffer()
+    {
+        glCreateTextures(GL_TEXTURE_1D, 4, tex_id);
+
+        glTextureStorage1D(tex_id[0], 1, GL_RGBA32F, tex_width);
+        glTextureStorage1D(tex_id[1], 1, GL_RGBA32F, tex_width);
+        glTextureStorage1D(tex_id[2], 1, GL_R32F, tex_width);
+        glTextureStorage1D(tex_id[3], 1, GL_R32F, tex_width);
+    }
+
+    void fillBuffer()
+    {
+        glTextureSubImage1D(tex_id[0], 0, 0, tex_width, GL_RGBA, GL_FLOAT, reach_gamut_table);
+        glTextureSubImage1D(tex_id[1], 0, 0, tex_width, GL_RGBA, GL_FLOAT, gamut_cusp_table);
+        glTextureSubImage1D(tex_id[2], 0, 0, tex_width, GL_RED, GL_FLOAT, reach_cusp_table);
+        glTextureSubImage1D(tex_id[3], 0, 0, tex_width, GL_RED, GL_FLOAT, upper_hull_gamma_table);
+    }
+
+#endif
 
 void Redisplay(void)
 {
     if (g_oglApp)
     {
+#ifdef OPENGL_QUERY
         glBeginQuery(GL_TIME_ELAPSED, queryID[queryBackBuffer][0]);
+#endif
 
 #ifdef USE_SSBO
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer_id);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, buffer_id);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-#else
+#elif defined USE_UBO
         glBindBuffer(GL_UNIFORM_BUFFER, buffer_id);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, buffer_id);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
+#elif defined USE_TEXTURE
+        glBindTextureUnit(2, tex_id[0]);
+        glBindTextureUnit(3, tex_id[1]);
+        glBindTextureUnit(4, tex_id[2]);
+        glBindTextureUnit(5, tex_id[3]);
 #endif
 
         g_oglApp->redisplay_noswap();
+
+#ifdef OPENGL_QUERY
         glEndQuery(GL_TIME_ELAPSED);
+#endif
+
         glutSwapBuffers();
 
+#ifdef OPENGL_QUERY
         GLuint64 elapsed_time;
-        glGetQueryObjectui64v(queryID[queryFrontBuffer][0], GL_QUERY_RESULT, &elapsed_time);
+        glGetQueryObjectui64v(
+            queryID[queryFrontBuffer][0],
+            GL_QUERY_RESULT, &elapsed_time);
         swapQueryBuffers();
 
         std::cerr << "elapsed_time: " << elapsed_time / 1e6 << "ms"
                   << " for viewport: " << g_oglApp->m_viewportWidth << "x" << g_oglApp->m_viewportHeight
                   << "\n";
+#endif
 
         glutPostRedisplay();
     }
@@ -514,7 +650,7 @@ void UpdateOCIOGLState()
                             g_useMetal ?
                             OCIO::GPU_LANGUAGE_MSL_2_0 :
 #endif
-                            OCIO::GPU_LANGUAGE_GLSL_1_2);
+                            OCIO::GPU_LANGUAGE_GLSL_1_3);
     shaderDesc->setFunctionName("OCIODisplay");
     shaderDesc->setResourcePrefix("ocio_");
 
@@ -527,18 +663,27 @@ void UpdateOCIOGLState()
 
 #ifdef HARDCODED_SHADER
 
-    // read and store code from file
-    // std::string path = "/user_data/RND/dev/OpenColorIO/aces1.glsl";
-    std::string path = "/user_data/RND/dev/OpenColorIO/aces2.glsl";
-    std::ifstream fileStream(path);
+    std::ifstream fileStream(SHADER_PATH);
     if( !fileStream.is_open() )
-        std::cout << "Could not open : " << path << std::endl;
+        std::cout << "Could not open : " << SHADER_PATH << std::endl;
 
     std::string str((std::istreambuf_iterator<char>(fileStream)),
             std::istreambuf_iterator<char>());
     fileStream.close();
 
-    g_oglApp->setShader(shaderDesc, str);
+    std::ostringstream oss;
+#ifdef USE_SSBO
+    oss << "#define USE_SSBO\n";
+#elif defined USE_UBO
+    oss << "#define USE_UBO\n";
+#elif defined USE_TEXTURE
+    oss << "#define USE_TEXTURE\n";
+#endif
+    oss << "\n\n" << str;
+
+    std::cout << "Shader is:\n" << oss.str() << "\n";
+
+    g_oglApp->setShader(shaderDesc, oss.str());
 
 #else
 
@@ -806,9 +951,20 @@ int main(int argc, char **argv)
     g_oglApp->setYMirror();
     g_oglApp->setPrintShader(g_gpuinfo);
 
+#ifdef OPENGL_DEBUG_CB
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(debug_message_callback, nullptr);
+#endif
+
+#ifdef OPENGL_QUERY
     genQueries();
+#endif
+
+#if defined USE_UBO || defined USE_SSBO || defined USE_TEXTURE
     genBuffer();
     fillBuffer();
+#endif
 
     GLint maxLocs = 0, maxComp = 0, maxVec = 0;
     glGetIntegerv(GL_MAX_UNIFORM_LOCATIONS, &maxLocs);
