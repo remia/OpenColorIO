@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <cstdio>
+#include <csignal>
 #include <cstring>
 #include <iostream>
 #include <fstream>
@@ -39,15 +40,20 @@ namespace OCIO = OCIO_NAMESPACE;
 
 #include "tables.h"
 
+// #define RENDER_IMAGE
+constexpr auto RENDER_PATH = "/user_data/RND/dev/OpenColorIO/src/apps/ociodisplay/aces2_tex.exr";
 
 #define HARDCODED_SHADER
-constexpr auto SHADER_PATH = "/user_data/RND/dev/OpenColorIO/aces2.glsl";
+constexpr auto SHADER_PATH = "/user_data/RND/dev/OpenColorIO/src/apps/ociodisplay/aces2.glsl";
 
 #define OPENGL_DEBUG_CB
 #define OPENGL_QUERY
-#define USE_SSBO
-// #define USE_UBO
+// #define USE_SSBO
+#define USE_UBO
 // #define USE_TEXTURE
+
+// #define PRINT_SHADER
+#define PRINT_TIMING
 
 bool g_verbose   = false;
 bool g_gpulegacy = false;
@@ -58,6 +64,8 @@ bool g_useMetal  = false;
 
 std::string g_filename;
 
+long g_imageWidth;
+long g_imageHeight;
 float g_imageAspect;
 
 std::string g_inputColorSpace;
@@ -178,12 +186,12 @@ void debug_message_callback(
         break;
     }
 
-    if (severity == GL_DEBUG_SEVERITY_HIGH) {
+    // if (severity == GL_DEBUG_SEVERITY_HIGH) {
         std::cerr
             << id << ": " << _type
             << " of " << _severity << " severity, raised from "
             << _source << ": " << msg << "\n";
-    }
+    // }
 
     // Uncomment to allow simple gdb usage, if GL_DEBUG_OUTPUT_SYNCHRONOUS
     // is enabled, the stacktrace in gdb will directly point to the
@@ -260,6 +268,8 @@ static void InitImageTexture(const char * filename)
     if (img.getHeight()!=0)
     {
         g_imageAspect = (float) img.getWidth() / (float) img.getHeight();
+        g_imageWidth = img.getWidth();
+        g_imageHeight = img.getHeight();
     }
 
     if (g_oglApp)
@@ -429,9 +439,12 @@ void Redisplay(void)
             GL_QUERY_RESULT, &elapsed_time);
         swapQueryBuffers();
 
+#ifdef PRINT_TIMING
         std::cerr << "elapsed_time: " << elapsed_time / 1e6 << "ms"
                   << " for viewport: " << g_oglApp->m_viewportWidth << "x" << g_oglApp->m_viewportHeight
                   << "\n";
+#endif
+
 #endif
 
         glutPostRedisplay();
@@ -681,7 +694,9 @@ void UpdateOCIOGLState()
 #endif
     oss << "\n\n" << str;
 
+#ifdef PRINT_SHADER
     std::cout << "Shader is:\n" << oss.str() << "\n";
+#endif
 
     g_oglApp->setShader(shaderDesc, oss.str());
 
@@ -1044,9 +1059,27 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+#ifndef RENDER_IMAGE
+
     Redisplay();
 
     glutMainLoop();
+
+#else
+
+    g_oglApp->createGLBuffers();
+
+    OCIO::ImageIO outImg(
+        g_imageWidth, g_imageHeight,
+        OCIO::CHANNEL_ORDERING_RGBA,
+        OCIO::BIT_DEPTH_F32);
+
+    g_oglApp->reshape(g_imageWidth, g_imageHeight);
+    Redisplay();
+    g_oglApp->readImage((float *)outImg.getData());
+    outImg.write(RENDER_PATH);
+
+#endif
 
     return 0;
 }

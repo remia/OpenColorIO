@@ -175,6 +175,15 @@ GLuint CompileShaderText(GLenum shaderType, const char * text)
 
         throw Exception(err.c_str());
     }
+    else
+    {
+        GLchar log[1000];
+        GLsizei len;
+        glGetShaderInfoLog(shader, 1000, &len, log);
+
+        std::cerr << "OCIO Shader program compilation log:\n";
+        std::cerr << log;
+    }
 
     return shader;
 }
