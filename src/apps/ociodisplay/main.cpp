@@ -543,10 +543,10 @@ void Redisplay(void)
 
 #else
 
-        glBindTextureUnit(2, tex_id[0]);
-        glBindTextureUnit(3, tex_id[1]);
-        glBindTextureUnit(4, tex_id[2]);
-        glBindTextureUnit(5, tex_id[3]);
+        glBindTextureUnit(1, tex_id[0]);
+        glBindTextureUnit(2, tex_id[1]);
+        glBindTextureUnit(3, tex_id[2]);
+        glBindTextureUnit(4, tex_id[3]);
 
 #endif
 

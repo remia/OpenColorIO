@@ -13,7 +13,9 @@
 #endif
 
 #if defined USE_TEXTURE && !defined OPENGL_APPLE
-#extension GL_ARB_shading_language_420pack : enable
+// These 2 extensions are needed for layout (binding)
+#extension GL_ARB_shading_language_420pack : require
+#extension GL_ARB_shader_storage_buffer_object : require
 #endif
 
 const int table_size = 360;
@@ -62,10 +64,10 @@ uniform sampler1D upper_hull_gamma_tex;
 
 #else
 
-layout (binding = 2) uniform sampler1D reach_gamut_tex;
-layout (binding = 3) uniform sampler1D gamut_cusp_tex;
-layout (binding = 4) uniform sampler1D reach_cusp_tex;
-layout (binding = 5) uniform sampler1D upper_hull_gamma_tex;
+layout (binding = 1) uniform sampler1D reach_gamut_tex;
+layout (binding = 2) uniform sampler1D gamut_cusp_tex;
+layout (binding = 3) uniform sampler1D reach_cusp_tex;
+layout (binding = 4) uniform sampler1D upper_hull_gamma_tex;
 
 #define SAMPLE_REACH_GAMUT(h) texelFetch(reach_gamut_tex, h, 0).rgb
 #define SAMPLE_GAMUT_CUSP(h) texelFetch(gamut_cusp_tex, h, 0).rgb

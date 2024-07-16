@@ -6,8 +6,9 @@ Usage
 
 To build OCIO 2.4dev
 
-    bob build-build-world opencolorio --ctx=platform-pipe6-gcc9-1
-    /builds/world/73e86ac3c8
+    # Add glew to opencolorio builder's deps
+    bob build-build-world opencolorio --ctx=platform-pipe6-gcc9-1 -w
+    /builds/world/b401024ed1
 
 To use gperftool
 
@@ -38,6 +39,7 @@ AMD EPYC 75F3 32-Core Processor (Centos7)
     CPU ACES2 ~ 0.4s ~ 400ms
     CPU ACES2 ~ 3.8s ~ 3800ms
 
+
 NVIDIA A40-12Q (Centos7)
 
 1920x1047 viewport  (Marcie)
@@ -56,6 +58,11 @@ NVIDIA A40-12Q (Centos7)
     GPU ACES2 - ubo (packed) ~ 41ms for 10 iterations 4K or 4.2ms
     GPU ACES2 - ubo (std140) float array padded to 4 floats ~ 52ms for 10 iterations 4K or 5.2ms
 
+    GPU ACES2 - USE_SSBO ~ 4.4ms for 10 iterations 4K
+    GPU ACES2 - USE_SSBO + CHROMA_CURVE ~ 3.95ms for 10 iterations 4K
+    GPU ACES2 - USE_TEXTURE ~ 6.5ms for 10 iterations 4K
+    GPU ACES2 - USE_TEXTURE + CHROMA_CURVE ~ 4.8ms for 10 iterations 4K
+
 1920x1079 viewport  (Marcie)
 
     GPU ACES1 - DEFAULT - 0.5ms for 10 iterations
@@ -63,17 +70,16 @@ NVIDIA A40-12Q (Centos7)
     GPU ACES2 - CONST BUF - 18ms for 10 iterations
     GPU ACES2 - USE_TEXTURE - 1.85ms for 10 iterations
     GPU ACES2 - USE_UBO - 14.5ms for 10 iterations
-    GPU ACES2 - USE_SSBO - 1.21 for 10 iterations
+    GPU ACES2 - USE_SSBO - 1.21ms for 10 iterations
+
 
 AMD Radeon Pro 560X (macOS 14.5)
 
 1920x1147 viewport  (Marcie)
 
     GPU ACES1 - USE DEFAULT - 12.3ms for 10 iterations
-
     GPU ACES2 - USE TEXTURE - 32.3357ms for 10 iterations
-
-    GPU ACES2 - USE TEXTURE + CHROMA CURVE - 22.8ms for 10 iterations
+    GPU ACES2 - USE TEXTURE + CHROMA_CURVE - 22.8ms for 10 iterations
 
 
 TODO
