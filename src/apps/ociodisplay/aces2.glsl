@@ -1,6 +1,8 @@
 // TODO: Remove, just for integer modulus
 #extension GL_EXT_gpu_shader4 : enable
 
+#define CHROMA_CURVE
+
 #ifdef USE_SSBO
 #extension GL_ARB_shader_storage_buffer_object : require
 #endif
@@ -1805,6 +1807,33 @@ float reachFromTable(float h)
     return mix(lo, hi, t);
 }
 
+#ifdef CHROMA_CURVE
+
+const float chromaCompressScale = pow(0.03379f * 100 /* peakLuminance */, 0.30596f) - 0.45135f;
+
+float chromaCompressNorm(float h)
+{
+    float hr = radians(h);
+    float a = cos(hr);
+    float b = sin(hr);
+    float cos_hr2 = a * a - b * b;
+    float sin_hr2 = 2.0f * a * b;
+    float cos_hr3 = 4.0f * a * a * a - 3.0f * a;
+    float sin_hr3 = 3.0f * b - 4.0f * b * b * b;
+
+    float M = 11.34072f * a +
+              16.46899f * cos_hr2 +
+               7.88380f * cos_hr3 +
+              14.66441f * b +
+              -6.37224f * sin_hr2 +
+               9.19364f * sin_hr3 +
+              77.12896f;
+
+    return M * chromaCompressScale;
+}
+
+#endif
+
 float toe( float x, float limit, float k1_in, float k2_in)
 {
     if (x > limit)
@@ -2052,7 +2081,13 @@ vec4 OCIODisplay(vec4 inPixel)
         {
             float nJ = J / limit_J_max;
             float snJ = max(0.f, 1.f - nJ);
+
+#ifdef CHROMA_CURVE
+            float Mnorm = chromaCompressNorm(h);
+#else
             float Mnorm = reachCuspFromTable(h)[1];
+#endif
+
             float limit = pow(nJ, model_gamma) * reachFromTable(h) / Mnorm;
 
             M = M * pow(J / origJ, model_gamma);

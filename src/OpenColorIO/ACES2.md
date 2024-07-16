@@ -73,6 +73,8 @@ AMD Radeon Pro 560X (macOS 14.5)
 
     GPU ACES2 - USE TEXTURE - 32.3357ms for 10 iterations
 
+    GPU ACES2 - USE TEXTURE + CHROMA CURVE - 22.8ms for 10 iterations
+
 
 TODO
 ----

@@ -40,7 +40,7 @@ namespace OCIO = OCIO_NAMESPACE;
 
 #include "tables.h"
 
-#define RENDER_IMAGE
+// #define RENDER_IMAGE
 // constexpr auto RENDER_PATH = "/user_data/RND/dev/OpenColorIO/src/apps/ociodisplay/aces2_tex.exr";
 constexpr auto RENDER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodisplay/aces2_tex.exr";
 
