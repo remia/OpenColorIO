@@ -1,9 +1,18 @@
 // TODO: Remove, just for integer modulus
 #extension GL_EXT_gpu_shader4 : enable
+
+#ifdef USE_SSBO
 #extension GL_ARB_shader_storage_buffer_object : require
+#endif
+
+#if defined USE_UBO
 #extension GL_ARB_uniform_buffer_object : enable
 #extension GL_NV_uniform_buffer_std430_layout : enable
+#endif
+
+#if defined USE_TEXTURE && !defined OPENGL_APPLE
 #extension GL_ARB_shading_language_420pack : enable
+#endif
 
 const int table_size = 360;
 
@@ -37,6 +46,20 @@ layout (std430, binding = 1) uniform TablesBuffer {
 
 #elif defined USE_TEXTURE
 
+#ifdef OPENGL_APPLE
+
+uniform sampler1D reach_gamut_tex;
+uniform sampler1D gamut_cusp_tex;
+uniform sampler1D reach_cusp_tex;
+uniform sampler1D upper_hull_gamma_tex;
+
+#define SAMPLE_REACH_GAMUT(h) texture1D(reach_gamut_tex, h / table_size).rgb
+#define SAMPLE_GAMUT_CUSP(h) texture1D(gamut_cusp_tex, h / table_size).rgb
+#define SAMPLE_REACH_CUSP(h) texture1D(reach_cusp_tex, h / table_size).r
+#define SAMPLE_UPPER_GAMMA(h) texture1D(upper_hull_gamma_tex, h / table_size).r
+
+#else
+
 layout (binding = 2) uniform sampler1D reach_gamut_tex;
 layout (binding = 3) uniform sampler1D gamut_cusp_tex;
 layout (binding = 4) uniform sampler1D reach_cusp_tex;
@@ -46,6 +69,8 @@ layout (binding = 5) uniform sampler1D upper_hull_gamma_tex;
 #define SAMPLE_GAMUT_CUSP(h) texelFetch(gamut_cusp_tex, h, 0).rgb
 #define SAMPLE_REACH_CUSP(h) texelFetch(reach_cusp_tex, h, 0).r
 #define SAMPLE_UPPER_GAMMA(h) texelFetch(upper_hull_gamma_tex, h, 0).r
+
+#endif
 
 #else
 

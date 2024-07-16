@@ -128,7 +128,7 @@ public:
     int m_viewportWidth{ 0 };
     int m_viewportHeight{ 0 };
 
-protected:
+public:
     // Initialize the OpenGL engine, and set up GLEW if needed.
     void setupCommon();
     
@@ -214,4 +214,3 @@ private:
 } // namespace OCIO_NAMESPACE
 
 #endif // INCLUDED_OCIO_OGLAPP_H
-

@@ -32,13 +32,13 @@ TODO List
 Performance number
 ------------------
 
-AMD EPYC 75F3 32-Core Processor
+AMD EPYC 75F3 32-Core Processor (Centos7)
 
 2048 x 1556 image (Marcie)
     CPU ACES2 ~ 0.4s ~ 400ms
     CPU ACES2 ~ 3.8s ~ 3800ms
 
-NVIDIA A40-12Q
+NVIDIA A40-12Q (Centos7)
 
 1920x1047 viewport  (Marcie)
     GPU ACES1 ~ 0.480256ms for 10 iterations or ~ 0.0480256ms
@@ -64,6 +64,14 @@ NVIDIA A40-12Q
     GPU ACES2 - USE_TEXTURE - 1.85ms for 10 iterations
     GPU ACES2 - USE_UBO - 14.5ms for 10 iterations
     GPU ACES2 - USE_SSBO - 1.21 for 10 iterations
+
+AMD Radeon Pro 560X (macOS 14.5)
+
+1920x1147 viewport  (Marcie)
+
+    GPU ACES1 - USE DEFAULT - 12.3ms for 10 iterations
+
+    GPU ACES2 - USE TEXTURE - 32.3357ms for 10 iterations
 
 
 TODO

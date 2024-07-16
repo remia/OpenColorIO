@@ -45,7 +45,7 @@ public:
     void updateImage(const float * imageBuffer) override;
     
     // Set the shader code.
-    void setShader(GpuShaderDescRcPtr & shaderDesc) override;
+    void setShader(GpuShaderDescRcPtr & shaderDesc, const std::string &override_fs = "") override;
     
     // Prepares and binds the OpenGL state used to present metal output texture in GLUT window
     void     prepareAndBindOpenGLState();
@@ -70,4 +70,3 @@ private:
 }
 
 #endif // INCLUDED_OCIO_METALAPP_H
-

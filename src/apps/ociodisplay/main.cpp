@@ -19,7 +19,7 @@
 namespace OCIO = OCIO_NAMESPACE;
 
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
+#include <OpenGL/gl3.h>
 #include <OpenGL/glext.h>
 #include <GLUT/glut.h>
 #elif _WIN32
@@ -40,17 +40,20 @@ namespace OCIO = OCIO_NAMESPACE;
 
 #include "tables.h"
 
-// #define RENDER_IMAGE
-constexpr auto RENDER_PATH = "/user_data/RND/dev/OpenColorIO/src/apps/ociodisplay/aces2_tex.exr";
+#define RENDER_IMAGE
+// constexpr auto RENDER_PATH = "/user_data/RND/dev/OpenColorIO/src/apps/ociodisplay/aces2_tex.exr";
+constexpr auto RENDER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodisplay/aces2_tex.exr";
 
 #define HARDCODED_SHADER
-constexpr auto SHADER_PATH = "/user_data/RND/dev/OpenColorIO/src/apps/ociodisplay/aces2.glsl";
+// constexpr auto SHADER_PATH = "/user_data/RND/dev/OpenColorIO/src/apps/ociodisplay/aces2.glsl";
+constexpr auto SHADER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodisplay/aces2.glsl";
 
-#define OPENGL_DEBUG_CB
+#define OPENGL_APPLE
+// #define OPENGL_DEBUG_CB
 #define OPENGL_QUERY
 // #define USE_SSBO
-#define USE_UBO
-// #define USE_TEXTURE
+// #define USE_UBO
+#define USE_TEXTURE
 
 // #define PRINT_SHADER
 #define PRINT_TIMING
@@ -86,6 +89,8 @@ float g_display_gamma{ 1.0f };
 int g_channelHot[4]{ 1, 1, 1, 1 };  // show rgb
 
 OCIO::OglAppRcPtr g_oglApp;
+
+#ifdef OPENGL_DEBUG_CB
 
 void debug_message_callback(
     GLenum source,
@@ -197,6 +202,21 @@ void debug_message_callback(
     // is enabled, the stacktrace in gdb will directly point to the
     // problematic opengl call.
     // std::raise(SIGINT);
+}
+
+#endif
+
+void CheckErrorAndPrint(const std::string& message)
+{
+    GLenum errCode;
+    const GLubyte *errString;
+
+    if ((errCode = glGetError()) != GL_NO_ERROR)
+    {
+        errString = gluErrorString(errCode);
+        std::cerr << message << std::endl;
+        std::cerr << "OpenGL Error : " << errString << std::endl;
+    }
 }
 
 void UpdateOCIOGLState();
@@ -352,14 +372,31 @@ void InitOCIO(const char * filename)
 
     void genBuffer()
     {
+#ifdef OPENGL_APPLE
+
+        glGenBuffers(1, &buffer_id);
+
+#else
+
         glCreateBuffers(1, &buffer_id);
+
+#endif
     }
 
     void fillBuffer()
     {
-        glNamedBufferData(buffer_id, buffer_size, nullptr, GL_STATIC_DRAW);
+#ifdef OPENGL_APPLE
 
+        glBindBuffer(GL_UNIFORM_BUFFER, buffer_id);
+        glBufferData(GL_UNIFORM_BUFFER, buffer_size, nullptr, GL_STATIC_DRAW);
+        float *buf = (float*) glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+
+#else
+
+        glNamedBufferData(buffer_id, buffer_size, nullptr, GL_STATIC_DRAW);
         float *buf = (float*) glMapNamedBuffer(buffer_id, GL_WRITE_ONLY);
+
+#endif
 
         memcpy(buf, reach_gamut_table, table_size*4*sizeof(float));
         buf += table_size*4;
@@ -373,7 +410,16 @@ void InitOCIO(const char * filename)
         memcpy(buf, upper_hull_gamma_table, table_size*sizeof(float));
         buf += table_size;
 
+#ifdef OPENGL_APPLE
+
+        glUnmapBuffer(GL_UNIFORM_BUFFER);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+#else
+
         glUnmapNamedBuffer(buffer_id);
+
+#endif
     }
 
 #elif defined USE_TEXTURE
@@ -383,20 +429,66 @@ void InitOCIO(const char * filename)
 
     void genBuffer()
     {
+#ifdef OPENGL_APPLE
+
+        glGenTextures(4, tex_id);
+
+#else
+
         glCreateTextures(GL_TEXTURE_1D, 4, tex_id);
 
         glTextureStorage1D(tex_id[0], 1, GL_RGBA32F, tex_width);
         glTextureStorage1D(tex_id[1], 1, GL_RGBA32F, tex_width);
         glTextureStorage1D(tex_id[2], 1, GL_R32F, tex_width);
         glTextureStorage1D(tex_id[3], 1, GL_R32F, tex_width);
+
+#endif
     }
 
     void fillBuffer()
     {
+#ifdef OPENGL_APPLE
+
+        glBindTexture(GL_TEXTURE_1D, tex_id[0]);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F_ARB, tex_width, 0, GL_RGBA, GL_FLOAT, reach_gamut_table);
+
+        glBindTexture(GL_TEXTURE_1D, tex_id[1]);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F_ARB, tex_width, 0, GL_RGBA, GL_FLOAT, gamut_cusp_table);
+
+        glBindTexture(GL_TEXTURE_1D, tex_id[2]);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, tex_width, 0, GL_RED, GL_FLOAT, reach_cusp_table);
+
+        glBindTexture(GL_TEXTURE_1D, tex_id[3]);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, tex_width, 0, GL_RED, GL_FLOAT, upper_hull_gamma_table);
+
+#else
+
         glTextureSubImage1D(tex_id[0], 0, 0, tex_width, GL_RGBA, GL_FLOAT, reach_gamut_table);
         glTextureSubImage1D(tex_id[1], 0, 0, tex_width, GL_RGBA, GL_FLOAT, gamut_cusp_table);
         glTextureSubImage1D(tex_id[2], 0, 0, tex_width, GL_RED, GL_FLOAT, reach_cusp_table);
         glTextureSubImage1D(tex_id[3], 0, 0, tex_width, GL_RED, GL_FLOAT, upper_hull_gamma_table);
+
+#endif
     }
 
 #endif
@@ -418,10 +510,46 @@ void Redisplay(void)
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, buffer_id);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 #elif defined USE_TEXTURE
+
+#ifdef OPENGL_APPLE
+
+        glActiveTexture(GL_TEXTURE0 + 1);
+        glBindTexture(GL_TEXTURE_1D, tex_id[0]);
+        glUniform1i(
+            glGetUniformLocation(g_oglApp->m_oglBuilder->getProgramHandle(),
+                                 "reach_gamut_tex"),
+                                 GLint(1) );
+
+        glActiveTexture(GL_TEXTURE0 + 2);
+        glBindTexture(GL_TEXTURE_1D, tex_id[1]);
+        glUniform1i(
+            glGetUniformLocation(g_oglApp->m_oglBuilder->getProgramHandle(),
+                                 "gamut_cusp_tex"),
+                                 GLint(2) );
+
+        glActiveTexture(GL_TEXTURE0 + 3);
+        glBindTexture(GL_TEXTURE_1D, tex_id[2]);
+        glUniform1i(
+            glGetUniformLocation(g_oglApp->m_oglBuilder->getProgramHandle(),
+                                 "reach_cusp_tex"),
+                                 GLint(3) );
+
+        glActiveTexture(GL_TEXTURE0 + 4);
+        glBindTexture(GL_TEXTURE_1D, tex_id[3]);
+        glUniform1i(
+            glGetUniformLocation(g_oglApp->m_oglBuilder->getProgramHandle(),
+                                 "upper_hull_gamma_tex"),
+                                 GLint(4) );
+
+#else
+
         glBindTextureUnit(2, tex_id[0]);
         glBindTextureUnit(3, tex_id[1]);
         glBindTextureUnit(4, tex_id[2]);
         glBindTextureUnit(5, tex_id[3]);
+
+#endif
+
 #endif
 
         g_oglApp->redisplay_noswap();
@@ -662,8 +790,10 @@ void UpdateOCIOGLState()
 #if __APPLE__
                             g_useMetal ?
                             OCIO::GPU_LANGUAGE_MSL_2_0 :
-#endif
+                            OCIO::GPU_LANGUAGE_GLSL_1_2);
+#else
                             OCIO::GPU_LANGUAGE_GLSL_1_3);
+#endif
     shaderDesc->setFunctionName("OCIODisplay");
     shaderDesc->setResourcePrefix("ocio_");
 
@@ -691,6 +821,10 @@ void UpdateOCIOGLState()
     oss << "#define USE_UBO\n";
 #elif defined USE_TEXTURE
     oss << "#define USE_TEXTURE\n";
+#endif
+
+#ifdef OPENGL_APPLE
+    oss << "#define OPENGL_APPLE\n";
 #endif
     oss << "\n\n" << str;
 
@@ -981,6 +1115,8 @@ int main(int argc, char **argv)
     fillBuffer();
 #endif
 
+#ifndef OPENGL_APPLE
+
     GLint maxLocs = 0, maxComp = 0, maxVec = 0;
     glGetIntegerv(GL_MAX_UNIFORM_LOCATIONS, &maxLocs);
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &maxComp);
@@ -989,6 +1125,8 @@ int main(int argc, char **argv)
     std::cerr << "GL_MAX_UNIFORM_LOCATIONS: " << maxLocs << "\n";
     std::cerr << "GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: " << maxComp << "\n";
     std::cerr << "GL_MAX_FRAGMENT_UNIFORM_VECTORS: " << maxVec << "\n";
+
+#endif
 
     glutReshapeFunc(Reshape);
     glutKeyboardFunc(Key);

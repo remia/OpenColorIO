@@ -122,7 +122,7 @@ void MetalApp::prepareAndBindOpenGLState()
     m_glStateBound = true;
 }
 
-void MetalApp::setShader(GpuShaderDescRcPtr & shaderDesc)
+void MetalApp::setShader(GpuShaderDescRcPtr & shaderDesc, const std::string &)
 {
     std::ostringstream main;
     
