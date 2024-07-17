@@ -96,5 +96,9 @@ Other shading languages might not support large arrays altogether, would need to
 GLSL on mac OS do not work correctly with const arrays but is fine (and faster than textures) with non-const arrays
 GLSL on Linux do not work with non-const arrays but is fine with const arrays
 
+Some implementations apparently transparently turn large global arrays into uniforms.
+Overall, it seem not very clear and specified what should happen when large arrays are declared and initialized in a shader
+Might be risky to rely on this feature.
+
 Use of chroma curve generally speed up GPU implementation by 10% (up to 30% on macOS with texture, but the AMD card seem to have trouble with texture bandwith?)
 On CPU, with the naive implementation, it's reversed and 10% slower, didn't investigate thoroughly why but probably the additional arithmetic operations vs the lookup
