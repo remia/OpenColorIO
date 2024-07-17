@@ -78,7 +78,19 @@ layout (binding = 4) uniform sampler1D upper_hull_gamma_tex;
 
 #else
 
-const vec3 reach_gamut_table[table_size] = vec3[](
+// On macOS GL, using const arrays results in GPU hang or very slow and incorrect rendering.
+// (One frame every few seconds and completly wrong color produced)
+// Could be driver bug or it switching to software emulation due to being unable to fit the
+// array in local registers.
+// On Linux, using non-const arrays results in shader compilation error:
+// "cannot locate suitable resource to bind variable "@TMPXXX". Possibly large array.
+#ifdef OPENGL_APPLE
+#define CONST_ARRAY
+#else
+#define CONST_ARRAY const
+#endif
+
+CONST_ARRAY vec3 reach_gamut_table[table_size] = vec3[](
     vec3(61.305149078,   110.200607300,  0.589132547),
     vec3(61.069541931,   110.560317993,  1.250327468),
     vec3(60.831947327,   110.927497864,  1.933977604),
@@ -441,7 +453,7 @@ const vec3 reach_gamut_table[table_size] = vec3[](
     vec3(61.538814545,   109.848114014,  359.948303223)
 );
 
-const float reach_cusp_table[table_size] = float[](
+CONST_ARRAY float reach_cusp_table[table_size] = float[](
     166.786010742,
     168.475524902,
     170.134735107,
@@ -804,7 +816,7 @@ const float reach_cusp_table[table_size] = float[](
     165.071594238
 );
 
-const vec3 gamut_cusp_table[table_size] = vec3[](
+CONST_ARRAY vec3 gamut_cusp_table[table_size] = vec3[](
     vec3(54.047630310,   68.745735168,   0.730295599),
     vec3(53.769119263,   68.940780640,   1.756810427),
     vec3(53.488082886,   69.149490356,   2.824278355),
@@ -1167,7 +1179,7 @@ const vec3 gamut_cusp_table[table_size] = vec3[](
     vec3(54.323745728,   68.563339233,   359.740875244)
 );
 
-const float upper_hull_gamma_table[table_size] = float[](
+CONST_ARRAY float upper_hull_gamma_table[table_size] = float[](
     0.888256788,
     0.887408376,
     0.886523426,

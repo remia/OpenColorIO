@@ -83,9 +83,18 @@ AMD Radeon Pro 560X (macOS 14.5)
     GPU ACES2 - USE TEXTURE - 32.3357ms for 10 iterations
     GPU ACES2 - USE TEXTURE + CHROMA_CURVE - 22.8ms for 10 iterations
 
+    GPU ACES2 - USE NON CONST ARRAYS - 19.8ms for 10 iterations
+    GPU ACES2 - USE NON CONST ARRAYS + CHROMA_CURVE - 17.9ms for 10 iterations
 
-TODO
-----
 
-Understand the limit of constant array size exactly
-Double check arrray of vec3 doesn't get padded to vec4 in glsl
+Remarks
+-------
+
+OpenGL ES 2.0 GLSL version doesn't support const array officially in the spec, individual implementations might
+Other shading languages might not support large arrays altogether, would need to be tested thoroughly
+
+GLSL on mac OS do not work correctly with const arrays but is fine (and faster than textures) with non-const arrays
+GLSL on Linux do not work with non-const arrays but is fine with const arrays
+
+Use of chroma curve generally speed up GPU implementation by 10% (up to 30% on macOS with texture, but the AMD card seem to have trouble with texture bandwith?)
+On CPU, with the naive implementation, it's reversed and 10% slower, didn't investigate thoroughly why but probably the additional arithmetic operations vs the lookup
