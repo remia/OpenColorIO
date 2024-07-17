@@ -57,10 +57,12 @@ uniform sampler1D gamut_cusp_tex;
 uniform sampler1D reach_cusp_tex;
 uniform sampler1D upper_hull_gamma_tex;
 
-#define SAMPLE_REACH_GAMUT(h) texture1D(reach_gamut_tex, h / table_size).rgb
-#define SAMPLE_GAMUT_CUSP(h) texture1D(gamut_cusp_tex, h / table_size).rgb
-#define SAMPLE_REACH_CUSP(h) texture1D(reach_cusp_tex, h / table_size).r
-#define SAMPLE_UPPER_GAMMA(h) texture1D(upper_hull_gamma_tex, h / table_size).r
+const float table_size_2_inv = 1.f / (2 * table_size);
+#define H_NORM(h) (2 * h + 1) * table_size_2_inv
+#define SAMPLE_REACH_GAMUT(h) texture1D(reach_gamut_tex, H_NORM(h)).rgb
+#define SAMPLE_GAMUT_CUSP(h) texture1D(gamut_cusp_tex, H_NORM(h)).rgb
+#define SAMPLE_REACH_CUSP(h) texture1D(reach_cusp_tex, H_NORM(h)).r
+#define SAMPLE_UPPER_GAMMA(h) texture1D(upper_hull_gamma_tex, H_NORM(h)).r
 
 #else
 

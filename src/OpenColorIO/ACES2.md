@@ -80,8 +80,8 @@ AMD Radeon Pro 560X (macOS 14.5)
 1920x1147 viewport  (Marcie)
 
     GPU ACES1 - USE DEFAULT - 12.3ms for 10 iterations
-    GPU ACES2 - USE TEXTURE - 32.3357ms for 10 iterations
-    GPU ACES2 - USE TEXTURE + CHROMA_CURVE - 22.8ms for 10 iterations
+    GPU ACES2 - USE TEXTURE - 19ms for 10 iterations
+    GPU ACES2 - USE TEXTURE + CHROMA_CURVE - 19.6ms for 10 iterations
 
     GPU ACES2 - USE NON CONST ARRAYS - 19.8ms for 10 iterations
     GPU ACES2 - USE NON CONST ARRAYS + CHROMA_CURVE - 17.9ms for 10 iterations
@@ -94,11 +94,17 @@ OpenGL ES 2.0 GLSL version doesn't support const array officially in the spec, i
 Other shading languages might not support large arrays altogether, would need to be tested thoroughly
 
 GLSL on mac OS do not work correctly with const arrays but is fine (and faster than textures) with non-const arrays
+It could be that const array elements are stored in local registers,, when the local memory is exceeded, the driver
+fallback to a software emulation mode.
 GLSL on Linux do not work with non-const arrays but is fine with const arrays
 
 Some implementations apparently transparently turn large global arrays into uniforms.
-Overall, it seem not very clear and specified what should happen when large arrays are declared and initialized in a shader
-Might be risky to rely on this feature.
+Overall, it seem not very clear and specified what should happen when large arrays are declared and initialized
+in a shader, such that the size is larger than available local memory. It also can results in slow down if the compiled
+shader contains additional instructions in the preamble, to push every values to local registers.
+Might be risky to rely on this feature, as implementation is not consistent accross GPU vendors / driver and not
+necessarily adapted to GPU graphic pipeline expected workflows (increased chance of bugs).
 
-Use of chroma curve generally speed up GPU implementation by 10% (up to 30% on macOS with texture, but the AMD card seem to have trouble with texture bandwith?)
-On CPU, with the naive implementation, it's reversed and 10% slower, didn't investigate thoroughly why but probably the additional arithmetic operations vs the lookup
+On GPU use of chroma curve generally speed up execution by 10%
+On CPU, with the naive implementation, it's reversed and 10% slower,
+didn't investigate thoroughly why but probably the additional arithmetic operations vs the lookup
