@@ -52,6 +52,10 @@ NVIDIA A40-12Q (Centos7)
 
     GPU ACES2 ~ 2.8 times slower
 
+    GPU ACES2 - USE_UBO - 14ms for 10 iterations
+    GPU ACES2 - USE_SSBO - 1.14ms for 10 iterations
+
+
 3840x2007 viewport  (Marcie)
     GPU ACES2 - const buffer arrays ~ 67ms for 10 iterations 4K or 6.7ms
     GPU ACES2 - const buffer arrays and no arrays argument passing to functions ~ 51ms for 10 iterations 4K or 5.1ms
@@ -69,7 +73,7 @@ NVIDIA A40-12Q (Centos7)
 
     GPU ACES1 - DEFAULT - 0.5ms for 10 iterations
 
-    GPU ACES2 - CONST BUF - 18ms for 10 iterations
+    GPU ACES2 - CONST BUF - 17ms for 10 iterations
     GPU ACES2 - USE_TEXTURE - 1.85ms for 10 iterations
     GPU ACES2 - USE_UBO - 14.5ms for 10 iterations
     GPU ACES2 - USE_SSBO - 1.21ms for 10 iterations
@@ -81,7 +85,7 @@ AMD Radeon Pro 560X (macOS 14.5)
 
     GPU ACES1 - USE DEFAULT - 12.3ms for 10 iterations
     GPU ACES2 - USE TEXTURE - 19ms for 10 iterations
-    GPU ACES2 - USE TEXTURE + CHROMA_CURVE - 19.6ms for 10 iterations
+    GPU ACES2 - USE TEXTURE + CHROMA_CURVE - 17ms for 10 iterations
 
     GPU ACES2 - USE NON CONST ARRAYS - 19.8ms for 10 iterations
     GPU ACES2 - USE NON CONST ARRAYS + CHROMA_CURVE - 17.9ms for 10 iterations
@@ -108,3 +112,7 @@ necessarily adapted to GPU graphic pipeline expected workflows (increased chance
 On GPU use of chroma curve generally speed up execution by 10%
 On CPU, with the naive implementation, it's reversed and 10% slower,
 didn't investigate thoroughly why but probably the additional arithmetic operations vs the lookup
+
+An ongoing performance question is why UBO are 10x slower than SSBO on Linux.
+It could be related to the access pattern from the shader that is not cache friendly?
+In theory, UBO is supposed to be always as fast, likely faster, than SSBO.

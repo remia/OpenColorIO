@@ -393,6 +393,7 @@ void InitOCIO(const char * filename)
 
 #else
 
+        std::cerr << "UBO size is: " << buffer_size << "\n";
         glNamedBufferData(buffer_id, buffer_size, nullptr, GL_STATIC_DRAW);
         float *buf = (float*) glMapNamedBuffer(buffer_id, GL_WRITE_ONLY);
 
@@ -1117,14 +1118,16 @@ int main(int argc, char **argv)
 
 #ifndef OPENGL_APPLE
 
-    GLint maxLocs = 0, maxComp = 0, maxVec = 0;
+    GLint maxLocs = 0, maxComp = 0, maxVec = 0, maxBlk = 0;
     glGetIntegerv(GL_MAX_UNIFORM_LOCATIONS, &maxLocs);
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &maxComp);
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxVec);
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxBlk);
     std::cerr << "\n";
     std::cerr << "GL_MAX_UNIFORM_LOCATIONS: " << maxLocs << "\n";
     std::cerr << "GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: " << maxComp << "\n";
     std::cerr << "GL_MAX_FRAGMENT_UNIFORM_VECTORS: " << maxVec << "\n";
+    std::cerr << "GL_MAX_UNIFORM_BLOCK_SIZE: " << maxBlk << "\n";
 
 #endif
 

@@ -8,6 +8,7 @@
 #endif
 
 #if defined USE_UBO
+#extension GL_ARB_shading_language_420pack : require
 #extension GL_ARB_uniform_buffer_object : enable
 #extension GL_NV_uniform_buffer_std430_layout : enable
 #endif
