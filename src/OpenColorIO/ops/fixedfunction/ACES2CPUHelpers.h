@@ -715,6 +715,7 @@ struct ODTParams
     float focus_dist;
     gamutTable reach_gamut_table;
     gamutTable reach_cusp_table;
+    float chromaCompressScale;
 
     // Gamut Compression
     gamutTable gamut_cusp_table;
@@ -987,6 +988,27 @@ constexpr float toe( float x, float limit, float k1_in, float k2_in, bool invert
     }
 }
 
+constexpr float chromaCompressNorm(float h, float chromaCompressScale)
+{
+    const float hr = degrees_to_radians(h);
+    const float a = cos(hr);
+    const float b = sin(hr);
+    const float cos_hr2 = a * a - b * b;
+    const float sin_hr2 = 2.0f * a * b;
+    const float cos_hr3 = 4.0f * a * a * a - 3.0f * a;
+    const float sin_hr3 = 3.0f * b - 4.0f * b * b * b;
+
+    const float M = 11.34072f * a +
+              16.46899f * cos_hr2 +
+               7.88380f * cos_hr3 +
+              14.66441f * b +
+              -6.37224f * sin_hr2 +
+               9.19364f * sin_hr3 +
+              77.12896f;
+
+    return M * chromaCompressScale;
+}
+
 constexpr float chromaCompression_fwd(const f3 &JMh, float origJ, const ODTParams &params)
 {
     const float J = JMh[0];
@@ -999,7 +1021,12 @@ constexpr float chromaCompression_fwd(const f3 &JMh, float origJ, const ODTParam
 
     const float nJ = J / params.limit_J_max;
     const float snJ = std::max(0.f, 1.f - nJ);
+// #define CHROMA_CURVE
+#ifdef CHROMA_CURVE
+    const float Mnorm = chromaCompressNorm(h, params.chromaCompressScale);
+#else
     const float Mnorm = cuspFromTable(h, params.reach_gamut_table)[1];
+#endif
     const float limit = pow(nJ, params.model_gamma) * reachFromTable(h, params.reach_cusp_table) / Mnorm;
 
     M = M * pow(J / origJ, params.model_gamma);
@@ -1645,6 +1672,8 @@ constexpr ODTParams init_ODTParams(
     params.sat_thr = sat_thr;
     params.compr = compr;
     params.focus_dist = focus_dist;
+
+    params.chromaCompressScale = pow(0.03379f * peakLuminance, 0.30596f) - 0.45135f;
 
     // Input
     params.INPUT_RGB_TO_XYZ = RGBtoXYZ_f33(AP0_PRI);

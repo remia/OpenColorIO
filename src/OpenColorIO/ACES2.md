@@ -36,8 +36,10 @@ Performance number
 AMD EPYC 75F3 32-Core Processor (Centos7)
 
 2048 x 1556 image (Marcie)
-    CPU ACES2 ~ 0.4s ~ 400ms
-    CPU ACES2 ~ 3.8s ~ 3800ms
+    CPU ACES2 ~ 0.4s
+    CPU ACES2 ~ 3.8s
+
+    CPU ACES2 - CHROMA_CURVE ~ 4.2s
 
 
 NVIDIA A40-12Q (Centos7)

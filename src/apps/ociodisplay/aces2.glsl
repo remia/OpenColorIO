@@ -1,7 +1,7 @@
 // TODO: Remove, just for integer modulus
 #extension GL_EXT_gpu_shader4 : enable
 
-#define CHROMA_CURVE
+// #define CHROMA_CURVE
 
 #ifdef USE_SSBO
 #extension GL_ARB_shader_storage_buffer_object : require

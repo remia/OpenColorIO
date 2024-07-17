@@ -80,52 +80,51 @@ int main(int, char **)
     using namespace OCIO::ACES2CPUHelpers;
 
     // Debug prints
+    // print_m33("AP0 to XYZ", srgb_100nits_odt.INPUT_RGB_TO_XYZ);
+    // print_m33("XYZ_TO_AP1", XYZ_TO_AP1);
+    // print_m33("AP1_TO_XYZ", AP1_TO_XYZ);
 
-    print_m33("AP0 to XYZ", srgb_100nits_odt.INPUT_RGB_TO_XYZ);
-    print_m33("XYZ_TO_AP1", XYZ_TO_AP1);
-    print_m33("AP1_TO_XYZ", AP1_TO_XYZ);
+    // print_m33("LIMIT_RGB_TO_XYZ", srgb_100nits_odt.LIMIT_RGB_TO_XYZ);
+    // print_m33("LIMIT_XYZ_TO_RGB", srgb_100nits_odt.LIMIT_XYZ_TO_RGB);
 
-    print_m33("LIMIT_RGB_TO_XYZ", srgb_100nits_odt.LIMIT_RGB_TO_XYZ);
-    print_m33("LIMIT_XYZ_TO_RGB", srgb_100nits_odt.LIMIT_XYZ_TO_RGB);
+    // print_m33("MATRIX_16", MATRIX_16);
+    // print_m33("MATRIX_16_INV", MATRIX_16_INV);
+    // print_m33("panlrcm", panlrcm);
 
-    print_m33("MATRIX_16", MATRIX_16);
-    print_m33("MATRIX_16_INV", MATRIX_16_INV);
-    print_m33("panlrcm", panlrcm);
+    // print_v("Input F_L", srgb_100nits_odt.inputJMhParams.F_L);
+    // print_v("Input z", srgb_100nits_odt.inputJMhParams.z);
+    // print_v3("Input D_RGB", srgb_100nits_odt.inputJMhParams.D_RGB);
+    // print_v("Input A_w", srgb_100nits_odt.inputJMhParams.A_w);
+    // print_v("Input A_w_J", srgb_100nits_odt.inputJMhParams.A_w_J);
 
-    print_v("Input F_L", srgb_100nits_odt.inputJMhParams.F_L);
-    print_v("Input z", srgb_100nits_odt.inputJMhParams.z);
-    print_v3("Input D_RGB", srgb_100nits_odt.inputJMhParams.D_RGB);
-    print_v("Input A_w", srgb_100nits_odt.inputJMhParams.A_w);
-    print_v("Input A_w_J", srgb_100nits_odt.inputJMhParams.A_w_J);
+    // print_v("Limit F_L", srgb_100nits_odt.limitJMhParams.F_L);
+    // print_v("Limit z", srgb_100nits_odt.limitJMhParams.z);
+    // print_v3("Limit D_RGB", srgb_100nits_odt.limitJMhParams.D_RGB);
+    // print_v("Limit A_w", srgb_100nits_odt.limitJMhParams.A_w);
+    // print_v("Limit A_w_J", srgb_100nits_odt.limitJMhParams.A_w_J);
 
-    print_v("Limit F_L", srgb_100nits_odt.limitJMhParams.F_L);
-    print_v("Limit z", srgb_100nits_odt.limitJMhParams.z);
-    print_v3("Limit D_RGB", srgb_100nits_odt.limitJMhParams.D_RGB);
-    print_v("Limit A_w", srgb_100nits_odt.limitJMhParams.A_w);
-    print_v("Limit A_w_J", srgb_100nits_odt.limitJMhParams.A_w_J);
+    // print_v("n_r", srgb_100nits_odt.n_r);
+    // print_v("g  ", srgb_100nits_odt.g  );
+    // print_v("t_1", srgb_100nits_odt.t_1);
+    // print_v("c_t", srgb_100nits_odt.c_t);
+    // print_v("s_2", srgb_100nits_odt.s_2);
+    // print_v("u_2", srgb_100nits_odt.u_2);
+    // print_v("m_2", srgb_100nits_odt.m_2);
 
-    print_v("n_r", srgb_100nits_odt.n_r);
-    print_v("g  ", srgb_100nits_odt.g  );
-    print_v("t_1", srgb_100nits_odt.t_1);
-    print_v("c_t", srgb_100nits_odt.c_t);
-    print_v("s_2", srgb_100nits_odt.s_2);
-    print_v("u_2", srgb_100nits_odt.u_2);
-    print_v("m_2", srgb_100nits_odt.m_2);
+    // print_v("limit_J_max", srgb_100nits_odt.limit_J_max);
+    // print_v("mid_J      ", srgb_100nits_odt.mid_J      );
+    // print_v("model_gamma", srgb_100nits_odt.model_gamma);
+    // print_v("sat        ", srgb_100nits_odt.sat        );
+    // print_v("sat_thr    ", srgb_100nits_odt.sat_thr    );
+    // print_v("compr      ", srgb_100nits_odt.compr      );
+    // print_v("focus_dist ", srgb_100nits_odt.focus_dist );
+    // print_gt("reach_gamut_table", srgb_100nits_odt.reach_gamut_table);
+    // print_gt("reach_cusp_table", srgb_100nits_odt.reach_cusp_table);
+    // print_gt("gamut_cusp_table", srgb_100nits_odt.gamut_cusp_table);
+    // print_gmt("upperHullGammaTable", srgb_100nits_odt.upperHullGammaTable);
 
-    print_v("limit_J_max", srgb_100nits_odt.limit_J_max);
-    print_v("mid_J      ", srgb_100nits_odt.mid_J      );
-    print_v("model_gamma", srgb_100nits_odt.model_gamma);
-    print_v("sat        ", srgb_100nits_odt.sat        );
-    print_v("sat_thr    ", srgb_100nits_odt.sat_thr    );
-    print_v("compr      ", srgb_100nits_odt.compr      );
-    print_v("focus_dist ", srgb_100nits_odt.focus_dist );
-    print_gt("reach_gamut_table", srgb_100nits_odt.reach_gamut_table);
-    print_gt("reach_cusp_table", srgb_100nits_odt.reach_cusp_table);
-    print_gt("gamut_cusp_table", srgb_100nits_odt.gamut_cusp_table);
-    print_gmt("upperHullGammaTable", srgb_100nits_odt.upperHullGammaTable);
-
-    return 0;
-    //
+    // return 0;
+    /////////////////////////////////////
 
     const auto pixels = setup_data();
 
