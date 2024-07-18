@@ -425,6 +425,10 @@ bool MetalBuilder::buildPipelineStateObject(const std::string & clientShaderProg
     @autoreleasepool
     {
         m_library = [[m_device newLibraryWithSource:shaderSrc options:options error:&error] autorelease];
+        if(error != nil)
+        {
+            NSLog(@" error => %@ ", error);
+        }
     
         id<MTLFunction> vertexShader = [[m_library newFunctionWithName:@"ColorCorrectionVS"] autorelease];
         id<MTLFunction> pixelShader  = [[m_library newFunctionWithName:@"ColorCorrectionPS"] autorelease];
@@ -521,7 +525,14 @@ void MetalBuilder::applyColorCorrection(id<MTLTexture> inputTexture, id<MTLTextu
     [renderCmdEncoder endEncoding];
     [cmdBuffer commit];
     [cmdBuffer waitUntilCompleted];
-    
+
+#define PRINT_TIMING
+#ifdef PRINT_TIMING
+    std::cerr << "elapsed_time: " << (cmdBuffer.GPUEndTime - cmdBuffer.GPUStartTime) * 1e3 << "ms"
+                << " for viewport: " << outWidth << "x" << outHeight
+                << "\n";
+#endif
+
     [renderPassDesc release];
     
     if(captureThisFrame)

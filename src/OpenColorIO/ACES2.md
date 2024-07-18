@@ -93,6 +93,16 @@ AMD Radeon Pro 560X (macOS 14.5)
     GPU ACES2 - USE NON CONST ARRAYS + CHROMA_CURVE + NO_DUP_CUSP - 15.7ms for 10 iterations
 
 
+AMD Radeon Pro 560X (macOS 14.5) Metal
+
+2048x1556  (Marcie)
+
+    GPU ACES1 - USE DEFAULT - 8.9ms per iteration
+
+    GPU ACES1 - USE CONST ARRAYS + CHROMA_CURVE - 27.8ms per iteration
+    GPU ACES1 - USE TEXTURE + CHROMA_CURVE - 26ms per iteration
+
+
 Remarks
 -------
 

@@ -122,7 +122,7 @@ void MetalApp::prepareAndBindOpenGLState()
     m_glStateBound = true;
 }
 
-void MetalApp::setShader(GpuShaderDescRcPtr & shaderDesc, const std::string &)
+void MetalApp::setShader(GpuShaderDescRcPtr & shaderDesc, const std::string &override_fs)
 {
     std::ostringstream main;
     
@@ -167,7 +167,14 @@ vertex VertexOut ColorCorrectionVS(unsigned int vId [[ vertex_id ]])
 })" };
         
         main << shaderheader;
-        main << shaderDesc->getShaderText();
+        if (!override_fs.empty())
+        {
+            main << override_fs;
+        }
+        else
+        {
+            main << shaderDesc->getShaderText();
+        }
     
         const std::string uniformDataStructName = "UniformData";
         const std::string uniformDataInstanceName = "uniformData";

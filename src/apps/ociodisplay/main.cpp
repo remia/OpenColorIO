@@ -42,21 +42,24 @@ namespace OCIO = OCIO_NAMESPACE;
 
 // #define RENDER_IMAGE
 // constexpr auto RENDER_PATH = "/user_data/RND/dev/OpenColorIO/src/apps/ociodisplay/aces2_tex.exr";
-constexpr auto RENDER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodisplay/aces2_tex.exr";
+constexpr auto RENDER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodisplay/aces2_tex2.exr";
 
 #define HARDCODED_SHADER
 // constexpr auto SHADER_PATH = "/user_data/RND/dev/OpenColorIO/src/apps/ociodisplay/aces2.glsl";
-constexpr auto SHADER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodisplay/aces2.glsl";
+// constexpr auto SHADER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodisplay/aces2.glsl";
+// constexpr auto SHADER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodisplay/aces1.msl";
+constexpr auto SHADER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodisplay/aces2.msl";
 
-#define OPENGL_APPLE
+#define METAL_APPLE
+// #define OPENGL_APPLE
 // #define OPENGL_DEBUG_CB
-#define OPENGL_QUERY
+// #define OPENGL_QUERY
 // #define USE_SSBO
 // #define USE_UBO
 #define USE_TEXTURE
 
 // #define PRINT_SHADER
-#define PRINT_TIMING
+// #define PRINT_TIMING
 
 bool g_verbose   = false;
 bool g_gpulegacy = false;
@@ -423,7 +426,7 @@ void InitOCIO(const char * filename)
 #endif
     }
 
-#elif defined USE_TEXTURE
+#elif defined USE_TEXTURE && !defined METAL_APPLE
 
     const GLsizei tex_width = 360;
     GLuint tex_id[4] {0, 0, 0, 0};
@@ -502,6 +505,7 @@ void Redisplay(void)
         if (g_useMetal)
         {
             g_oglApp->redisplay();
+            glutPostRedisplay();
             return;
         }
 
@@ -549,7 +553,7 @@ void Redisplay(void)
                                  "upper_hull_gamma_tex"),
                                  GLint(4) );
 
-#else
+#elif not defined METAL_APPLE
 
         glBindTextureUnit(1, tex_id[0]);
         glBindTextureUnit(2, tex_id[1]);
@@ -823,12 +827,69 @@ void UpdateOCIOGLState()
     fileStream.close();
 
     std::ostringstream oss;
+    oss << "\n\n";
+
 #ifdef USE_SSBO
     oss << "#define USE_SSBO\n";
 #elif defined USE_UBO
     oss << "#define USE_UBO\n";
 #elif defined USE_TEXTURE
     oss << "#define USE_TEXTURE\n";
+
+#if defined METAL_APPLE && defined USE_TEXTURE
+
+    std::vector<float> reach_gamut_table_3(360 * 3, 0);
+    for (int i = 0; i < 360; ++i) {
+        reach_gamut_table_3[i*3+0] = reach_gamut_table[i*4+0];
+        reach_gamut_table_3[i*3+1] = reach_gamut_table[i*4+1];
+        reach_gamut_table_3[i*3+2] = reach_gamut_table[i*4+2];
+    }
+
+    std::vector<float> gamut_cusp_table_3(360 * 3, 0);
+    for (int i = 0; i < 360; ++i) {
+        gamut_cusp_table_3[i*3+0] = gamut_cusp_table[i*4+0];
+        gamut_cusp_table_3[i*3+1] = gamut_cusp_table[i*4+1];
+        gamut_cusp_table_3[i*3+2] = gamut_cusp_table[i*4+2];
+    }
+
+    shaderDesc->addTexture(
+        "reach_gamut_tex",
+        "reach_gamut_sampler",
+        360, 1,
+        OCIO::GpuShaderCreator::TEXTURE_RGB_CHANNEL,
+        OCIO::GpuShaderCreator::TEXTURE_1D,
+        OCIO::INTERP_NEAREST,
+        reach_gamut_table_3.data());
+
+    shaderDesc->addTexture(
+        "gamut_cusp_tex",
+        "gamut_cusp_sampler",
+        360, 1,
+        OCIO::GpuShaderCreator::TEXTURE_RGB_CHANNEL,
+        OCIO::GpuShaderCreator::TEXTURE_1D,
+        OCIO::INTERP_NEAREST,
+        gamut_cusp_table_3.data());
+
+    shaderDesc->addTexture(
+        "reach_cusp_tex",
+        "reach_cusp_sampler",
+        360, 1,
+        OCIO::GpuShaderCreator::TEXTURE_RED_CHANNEL,
+        OCIO::GpuShaderCreator::TEXTURE_1D,
+        OCIO::INTERP_NEAREST,
+        reach_cusp_table);
+
+    shaderDesc->addTexture(
+        "upper_hull_gamma_tex",
+        "upper_hull_gamma_sampler",
+        360, 1,
+        OCIO::GpuShaderCreator::TEXTURE_RED_CHANNEL,
+        OCIO::GpuShaderCreator::TEXTURE_1D,
+        OCIO::INTERP_NEAREST,
+        upper_hull_gamma_table);
+
+#endif
+
 #endif
 
 #ifdef OPENGL_APPLE
@@ -1118,7 +1179,7 @@ int main(int argc, char **argv)
     genQueries();
 #endif
 
-#if defined USE_UBO || defined USE_SSBO || defined USE_TEXTURE
+#if defined USE_UBO || defined USE_SSBO || (defined USE_TEXTURE && not defined METAL_APPLE)
     genBuffer();
     fillBuffer();
 #endif
