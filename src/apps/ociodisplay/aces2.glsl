@@ -58,8 +58,8 @@ uniform sampler1D gamut_cusp_tex;
 uniform sampler1D reach_cusp_tex;
 uniform sampler1D upper_hull_gamma_tex;
 
-const float table_size_2_inv = 1.f / (2 * table_size);
-#define H_NORM(h) (2 * h + 1) * table_size_2_inv
+const float table_size_inv = 1.f / table_size;
+#define H_NORM(h) (h + 0.5) * table_size_inv
 #define SAMPLE_REACH_GAMUT(h) texture1D(reach_gamut_tex, H_NORM(h)).rgb
 #define SAMPLE_GAMUT_CUSP(h) texture1D(gamut_cusp_tex, H_NORM(h)).rgb
 #define SAMPLE_REACH_CUSP(h) texture1D(reach_cusp_tex, H_NORM(h)).r
@@ -1733,9 +1733,9 @@ vec2 gamutCuspFromTable(float h)
             i = int((low_i + high_i) / 2.f);
         }
 
-        lo[0] = SAMPLE_GAMUT_CUSP(high_i-1)[0];
-        lo[1] = SAMPLE_GAMUT_CUSP(high_i-1)[1];
-        lo[2] = SAMPLE_GAMUT_CUSP(high_i-1)[2];
+        lo[0] = SAMPLE_GAMUT_CUSP(clamp(high_i-1, 0, table_size-1))[0];
+        lo[1] = SAMPLE_GAMUT_CUSP(clamp(high_i-1, 0, table_size-1))[1];
+        lo[2] = SAMPLE_GAMUT_CUSP(clamp(high_i-1, 0, table_size-1))[2];
 
         hi[0] = SAMPLE_GAMUT_CUSP(high_i)[0];
         hi[1] = SAMPLE_GAMUT_CUSP(high_i)[1];
@@ -1748,6 +1748,33 @@ vec2 gamutCuspFromTable(float h)
 
     return vec2(cuspJ, cuspM);
 }
+
+#ifdef CHROMA_CURVE
+
+const float chromaCompressScale = pow(0.03379f * 100 /* peakLuminance */, 0.30596f) - 0.45135f;
+
+float chromaCompressNorm(float h)
+{
+    float hr = radians(h);
+    float a = cos(hr);
+    float b = sin(hr);
+    float cos_hr2 = a * a - b * b;
+    float sin_hr2 = 2.0f * a * b;
+    float cos_hr3 = 4.0f * a * a * a - 3.0f * a;
+    float sin_hr3 = 3.0f * b - 4.0f * b * b * b;
+
+    float M = 11.34072f * a +
+              16.46899f * cos_hr2 +
+               7.88380f * cos_hr3 +
+              14.66441f * b +
+              -6.37224f * sin_hr2 +
+               9.19364f * sin_hr3 +
+              77.12896f;
+
+    return M * chromaCompressScale;
+}
+
+#else
 
 vec2 reachCuspFromTable(float h)
 {
@@ -1811,6 +1838,8 @@ vec2 reachCuspFromTable(float h)
     return vec2(cuspJ, cuspM);
 }
 
+#endif
+
 float reachFromTable(float h)
 {
     int i_lo = hue_position_in_uniform_table( h, table_size);
@@ -1823,33 +1852,6 @@ float reachFromTable(float h)
 
     return mix(lo, hi, t);
 }
-
-#ifdef CHROMA_CURVE
-
-const float chromaCompressScale = pow(0.03379f * 100 /* peakLuminance */, 0.30596f) - 0.45135f;
-
-float chromaCompressNorm(float h)
-{
-    float hr = radians(h);
-    float a = cos(hr);
-    float b = sin(hr);
-    float cos_hr2 = a * a - b * b;
-    float sin_hr2 = 2.0f * a * b;
-    float cos_hr3 = 4.0f * a * a * a - 3.0f * a;
-    float sin_hr3 = 3.0f * b - 4.0f * b * b * b;
-
-    float M = 11.34072f * a +
-              16.46899f * cos_hr2 +
-               7.88380f * cos_hr3 +
-              14.66441f * b +
-              -6.37224f * sin_hr2 +
-               9.19364f * sin_hr3 +
-              77.12896f;
-
-    return M * chromaCompressScale;
-}
-
-#endif
 
 float toe( float x, float limit, float k1_in, float k2_in)
 {
@@ -1921,7 +1923,7 @@ float solve_J_intersect(float J, float M, float focusJ, float maxJ, float slope_
     return intersectJ;
 }
 
-vec3 get_reach_boundary(float J, float M, float h)
+vec3 get_reach_boundary(float J, float M, float h, vec2 JMcusp)
 {
     int i_lo = hue_position_in_uniform_table(h, table_size);
     int i_hi = next_position_in_table(i_lo, table_size);
@@ -1932,8 +1934,6 @@ vec3 get_reach_boundary(float J, float M, float h)
     float t = (h - i_lo) / (360.f / table_size);
 
     float reachMaxM = mix(lo, hi, t);
-
-    vec2 JMcusp = gamutCuspFromTable(h);
 
     float focusJ = mix(JMcusp[0], mid_J, min(1.f, cusp_mid_blend - (JMcusp[0] / limit_J_max)));
     float slope_gain = limit_J_max * focus_dist * get_focus_gain(J, JMcusp[0], limit_J_max);
@@ -2144,7 +2144,7 @@ vec4 OCIODisplay(vec4 inPixel)
         vec2 JMboundary = vec2(boundaryReturn[0], boundaryReturn[1]);
         vec2 project_to = vec2(boundaryReturn[2], 0.f);
 
-        vec3 reachBoundary = get_reach_boundary(JMboundary[0], JMboundary[1], JMh[2]);
+        vec3 reachBoundary = get_reach_boundary(JMboundary[0], JMboundary[1], JMh[2], JMcusp);
 
         float difference = max(1.0001f, reachBoundary[1] / JMboundary[1]);
         float threshold = max(compr_func_params[0], 1.f / difference);

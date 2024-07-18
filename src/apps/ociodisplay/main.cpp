@@ -498,6 +498,13 @@ void Redisplay(void)
 {
     if (g_oglApp)
     {
+
+        if (g_useMetal)
+        {
+            g_oglApp->redisplay();
+            return;
+        }
+
 #ifdef OPENGL_QUERY
         glBeginQuery(GL_TIME_ELAPSED, queryID[queryBackBuffer][0]);
 #endif
@@ -1116,7 +1123,7 @@ int main(int argc, char **argv)
     fillBuffer();
 #endif
 
-#ifndef OPENGL_APPLE
+#ifndef __APPLE__
 
     GLint maxLocs = 0, maxComp = 0, maxVec = 0, maxBlk = 0;
     glGetIntegerv(GL_MAX_UNIFORM_LOCATIONS, &maxLocs);

@@ -86,9 +86,11 @@ AMD Radeon Pro 560X (macOS 14.5)
     GPU ACES1 - USE DEFAULT - 12.3ms for 10 iterations
     GPU ACES2 - USE TEXTURE - 19ms for 10 iterations
     GPU ACES2 - USE TEXTURE + CHROMA_CURVE - 17ms for 10 iterations
+    GPU ACES2 - USE TEXTURE + CHROMA_CURVE + NO_DUP_GCUSP - 15ms for 10 iterations
 
     GPU ACES2 - USE NON CONST ARRAYS - 19.8ms for 10 iterations
     GPU ACES2 - USE NON CONST ARRAYS + CHROMA_CURVE - 17.9ms for 10 iterations
+    GPU ACES2 - USE NON CONST ARRAYS + CHROMA_CURVE + NO_DUP_CUSP - 15.7ms for 10 iterations
 
 
 Remarks
