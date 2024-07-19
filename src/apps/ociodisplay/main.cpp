@@ -388,6 +388,8 @@ void InitOCIO(const char * filename)
 
     void fillBuffer()
     {
+        std::cerr << "Buffer size is: " << buffer_size << " Bytes\n";
+
 #ifdef OPENGL_APPLE
 
         glBindBuffer(GL_UNIFORM_BUFFER, buffer_id);
@@ -396,7 +398,6 @@ void InitOCIO(const char * filename)
 
 #else
 
-        std::cerr << "UBO size is: " << buffer_size << "\n";
         glNamedBufferData(buffer_id, buffer_size, nullptr, GL_STATIC_DRAW);
         float *buf = (float*) glMapNamedBuffer(buffer_id, GL_WRITE_ONLY);
 
