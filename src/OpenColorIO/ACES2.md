@@ -55,6 +55,12 @@ NVIDIA A40-12Q (Centos7)
     GPU ACES2 - USE_UBO - 14ms for 10 iterations
     GPU ACES2 - USE_SSBO - 1.14ms for 10 iterations
 
+    GPU ACES2 - USE_CONSTARRAYS + CHROMA_CURVE - 6.5ms for 10 iterations
+    GPU ACES2 - USE_UBO + CHROMA_CURVE - 4ms for 10 iterations
+    GPU ACES2 - USE_SSBO + CHROMA_CURVE - 0.89ms for 10 iterations
+    GPU ACES2 - USE_TEXTURE + CHROMA_CURVE - 0.88ms for 10 iterations
+
+
 
 3840x2007 viewport  (Marcie)
     GPU ACES2 - const buffer arrays ~ 67ms for 10 iterations 4K or 6.7ms
@@ -128,3 +134,26 @@ didn't investigate thoroughly why but probably the additional arithmetic operati
 An ongoing performance question is why UBO are 10x slower than SSBO on Linux.
 It could be related to the access pattern from the shader that is not cache friendly?
 In theory, UBO is supposed to be always as fast, likely faster, than SSBO.
+
+Looking at NVIDIA generated assembly, UBO use CBUFFER (LDC instructions) vs. SSBO using
+STORAGE (LDB instructions). CBUFFER seem to represent constant memory (around 64KB) per
+streaming multiprocessor and access has to be serialized when different threads in a warp
+request different address (meaning here pixel with different hues probably quite common
+with noise, fine texture details in images). Moreover, there is a caching system on top
+of the constant memory, that might be trashed and results in even worse performance than
+expected for incoherent access patterns. Meanwhile, STORAGE / SSBO seem to be accessed
+similar to texture and generally work better with incoherent memory accesses.
+
+https://registry.khronos.org/OpenGL/extensions/NV/NV_gpu_program5_mem_extended.txt
+
+From https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#device-memory-accesses
+    Constant Memory
+
+    The constant memory space resides in device memory and is cached in the constant cache.
+
+    A request is then split into as many separate requests as there are different memory addresses in the initial request, decreasing throughput by a factor equal to the number of separate requests.
+
+    The resulting requests are then serviced at the throughput of the constant cache in case of a cache hit, or at the throughput of device memory otherwise.
+
+From https://github.com/sebbbi/perftest
+    Cbuffer loads: Nvidia Maxwell (and newer GPUs) have a special constant buffer hardware unit. Uniform address constant buffer loads are up to 32x faster (warp width) than standard memory loads. However non-uniform constant buffer loads are dead slow. Nvidia CUDA documents tell us that constant buffer load gets serialized for each unique address. Thus we can see up to 32x performance drop compared to best case. But in my test case (each lane = different address), we se up to 200x slow down. This result tells us that there's likely a small constant buffer cache on each SM, and if your access pattern is bad enough, this cache starts to trash badly. Unfortunately Nvidia doesn't provide us a public document describing best practices to avoid this pitfall.
