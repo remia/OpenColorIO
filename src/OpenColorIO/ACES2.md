@@ -58,8 +58,8 @@ NVIDIA A40-12Q (Centos7)
     GPU ACES2 - USE_CONSTARRAYS + CHROMA_CURVE - 6.5ms for 10 iterations
     GPU ACES2 - USE_UBO + CHROMA_CURVE - 4ms for 10 iterations
     GPU ACES2 - USE_SSBO + CHROMA_CURVE - 0.89ms for 10 iterations
+    GPU ACES2 - USE_SSBO (coherent qualifier) + CHROMA_CURVE - 6.8ms for 10 iterations
     GPU ACES2 - USE_TEXTURE + CHROMA_CURVE - 0.88ms for 10 iterations
-
 
 
 3840x2007 viewport  (Marcie)
@@ -142,7 +142,15 @@ request different address (meaning here pixel with different hues probably quite
 with noise, fine texture details in images). Moreover, there is a caching system on top
 of the constant memory, that might be trashed and results in even worse performance than
 expected for incoherent access patterns. Meanwhile, STORAGE / SSBO seem to be accessed
-similar to texture and generally work better with incoherent memory accesses.
+similar to texture, in global memory, and generally seem work better with incoherent
+memory accesses.
+
+When using SSBO with NVIDIA, using the coherent memory qualifier slow down the execution
+to similar level as const buffer arrays. The assembly generated now uses LDB.COH instead
+of LDB instructions, which mean cache coherency is enforced. The hardware is forced
+to use additional synchronization primitives to make sure every shader invokation
+has consistent visibility on the cache. This seem to reenforce the point made above
+about cache trashing being a factor in const arrays / CBUFFER slowness here.
 
 https://registry.khronos.org/OpenGL/extensions/NV/NV_gpu_program5_mem_extended.txt
 
