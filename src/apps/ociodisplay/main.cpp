@@ -61,6 +61,10 @@ constexpr auto SHADER_PATH = "/Users/remi/ColorCode/OpenColorIO/src/apps/ociodis
 // #define PRINT_SHADER
 // #define PRINT_TIMING
 
+
+#define DUMP_BINARY
+#define BIN_FILENAME "aces2_ubo.binary"
+
 bool g_verbose   = false;
 bool g_gpulegacy = false;
 bool g_gpuinfo   = false;
@@ -503,12 +507,32 @@ void Redisplay(void)
     if (g_oglApp)
     {
 
+#ifdef __APPLE__
         if (g_useMetal)
         {
             g_oglApp->redisplay();
             glutPostRedisplay();
             return;
         }
+#endif
+
+#ifdef DUMP_BINARY
+        GLsizei bufSize = 10e6;
+        GLsizei outSize = 0;
+        GLenum outFormat = 0;
+        std::vector<uint8_t> binBuf(bufSize);
+        glGetProgramBinary(
+            g_oglApp->m_oglBuilder->getProgramHandle(),
+            bufSize,
+            &outSize,
+            &outFormat,
+            binBuf.data()
+        );
+
+        auto myfile = std::fstream(BIN_FILENAME, std::ios::out | std::ios::binary);
+        myfile.write((char *) binBuf.data(), outSize);
+        myfile.close();
+#endif
 
 #ifdef OPENGL_QUERY
         glBeginQuery(GL_TIME_ELAPSED, queryID[queryBackBuffer][0]);
