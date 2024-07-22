@@ -365,7 +365,7 @@ const float reach_gamut_table[table_size*4] = {
     61.538814545,   109.848114014,  359.948303223, 0.0
 };
 
-const float reach_cusp_table[table_size] = {
+const float reach_m_table[table_size] = {
     166.786010742,
     168.475524902,
     170.134735107,

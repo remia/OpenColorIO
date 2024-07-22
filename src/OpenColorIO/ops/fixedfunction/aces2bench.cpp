@@ -5,7 +5,7 @@
 namespace OCIO = OCIO_NAMESPACE;
 #include <imageioapphelpers/imageio.h>
 
-#include "ACES2CPUHelpers.h"
+#include "ACES2CPU.h"
 
 
 // #define RANDOM
@@ -77,7 +77,7 @@ std::vector<float> setup_data()
 
 int main(int, char **)
 {
-    using namespace OCIO::ACES2CPUHelpers;
+    using namespace OCIO::ACES2;
 
     // Debug prints
     // print_m33("AP0 to XYZ", srgb_100nits_odt.INPUT_RGB_TO_XYZ);

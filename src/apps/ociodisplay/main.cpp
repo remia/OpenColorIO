@@ -413,7 +413,7 @@ void InitOCIO(const char * filename)
         memcpy(buf, gamut_cusp_table, table_size*4*sizeof(float));
         buf += table_size*4;
 
-        memcpy(buf, reach_cusp_table, table_size*sizeof(float));
+        memcpy(buf, reach_m_table, table_size*sizeof(float));
         buf += table_size;
 
         memcpy(buf, upper_hull_gamma_table, table_size*sizeof(float));
@@ -480,7 +480,7 @@ void InitOCIO(const char * filename)
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, tex_width, 0, GL_RED, GL_FLOAT, reach_cusp_table);
+        glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, tex_width, 0, GL_RED, GL_FLOAT, reach_m_table);
 
         glBindTexture(GL_TEXTURE_1D, tex_id[3]);
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -494,7 +494,7 @@ void InitOCIO(const char * filename)
 
         glTextureSubImage1D(tex_id[0], 0, 0, tex_width, GL_RGBA, GL_FLOAT, reach_gamut_table);
         glTextureSubImage1D(tex_id[1], 0, 0, tex_width, GL_RGBA, GL_FLOAT, gamut_cusp_table);
-        glTextureSubImage1D(tex_id[2], 0, 0, tex_width, GL_RED, GL_FLOAT, reach_cusp_table);
+        glTextureSubImage1D(tex_id[2], 0, 0, tex_width, GL_RED, GL_FLOAT, reach_m_table);
         glTextureSubImage1D(tex_id[3], 0, 0, tex_width, GL_RED, GL_FLOAT, upper_hull_gamma_table);
 
 #endif
@@ -902,7 +902,7 @@ void UpdateOCIOGLState()
         OCIO::GpuShaderCreator::TEXTURE_RED_CHANNEL,
         OCIO::GpuShaderCreator::TEXTURE_1D,
         OCIO::INTERP_NEAREST,
-        reach_cusp_table);
+        reach_m_table);
 
     shaderDesc->addTexture(
         "upper_hull_gamma_tex",

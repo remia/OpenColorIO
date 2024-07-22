@@ -527,20 +527,20 @@ void FixedFunctionOpData::validate() const
     else if (m_style == ACES_OUTPUT_TRANSFORM_20_FWD || m_style == ACES_OUTPUT_TRANSFORM_20_INV)
     {
         // TODO: parameter validation
-        // TODO: need encoding primaries for creative white point handling?
 
-        if (m_params.size() != 10)
+        if (m_params.size() != 18)
         {
             std::stringstream ss;
             ss  << "The style '" << ConvertStyleToString(m_style, true)
-                << "' must have ten parameters but "
+                << "' must have 18 parameters but "
                 << m_params.size() << " found.";
             throw Exception(ss.str().c_str());
         }
 
         // 1. peakLuminance (1 to 10000 nits?)
         // 2. limit primaries (xy for rgbw, 8 numbers)
-        // 3. whether to apply initial ap1 clamp
+        // 2. encoding primaries (xy for rgbw, 8 numbers)
+        // 3. whether to apply initial ap1 clamp (1 number, bool)
     }
     else if (m_style == ACES_AP0_TO_JMh_20 || m_style == ACES_JMh_TO_AP0_20)
     {

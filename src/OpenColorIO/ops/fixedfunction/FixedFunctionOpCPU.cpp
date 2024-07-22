@@ -7,10 +7,11 @@
 
 #include <OpenColorIO/OpenColorIO.h>
 
+#include "ACES2Init.h"
+#include "ACES2CPU.h"
 #include "BitDepthUtils.h"
 #include "MathUtils.h"
 #include "ops/fixedfunction/FixedFunctionOpCPU.h"
-#include "ACES2CPUHelpers.h"
 
 
 namespace OCIO_NAMESPACE
@@ -142,7 +143,7 @@ private:
 
 protected:
     bool m_fwd;
-    ACES2CPUHelpers::ODTParams m_params;
+    ACES2::ODTParams m_params;
 };
 
 class Renderer_ACES_AP0_TO_JMh_20 : public OpCPU
@@ -880,24 +881,46 @@ Renderer_ACES_OutputTransform20::Renderer_ACES_OutputTransform20(ConstFixedFunct
     m_fwd = FixedFunctionOpData::ACES_OUTPUT_TRANSFORM_20_FWD == data->getStyle();
 
     const float peakLuminance = (float) data->getParams()[0];
-    const float red_x = (float) data->getParams()[1];
-    const float red_y = (float) data->getParams()[2];
-    const float green_x = (float) data->getParams()[3];
-    const float green_y = (float) data->getParams()[4];
-    const float blue_x = (float) data->getParams()[5];
-    const float blue_y = (float) data->getParams()[6];
-    const float white_x = (float) data->getParams()[7];
-    const float white_y = (float) data->getParams()[8];
-    const bool ap1_clamp = data->getParams()[9] == 1.f;
 
-    const ACES2CPUHelpers::Chromaticities limitingPrimaries = {
-        {red_x, red_y},
-        {green_x, green_y},
-        {blue_x, blue_y},
-        {white_x, white_y}
+    const float lim_red_x   = (float) data->getParams()[1];
+    const float lim_red_y   = (float) data->getParams()[2];
+    const float lim_green_x = (float) data->getParams()[3];
+    const float lim_green_y = (float) data->getParams()[4];
+    const float lim_blue_x  = (float) data->getParams()[5];
+    const float lim_blue_y  = (float) data->getParams()[6];
+    const float lim_white_x = (float) data->getParams()[7];
+    const float lim_white_y = (float) data->getParams()[8];
+
+    const float enc_red_x   = (float) data->getParams()[9];
+    const float enc_red_y   = (float) data->getParams()[10];
+    const float enc_green_x = (float) data->getParams()[11];
+    const float enc_green_y = (float) data->getParams()[12];
+    const float enc_blue_x  = (float) data->getParams()[13];
+    const float enc_blue_y  = (float) data->getParams()[14];
+    const float enc_white_x = (float) data->getParams()[15];
+    const float enc_white_y = (float) data->getParams()[16];
+
+    const bool ap1_clamp = data->getParams()[17] == 1.f;
+
+    const Primaries limitingPrimaries = {
+        {lim_red_x  , lim_red_y  },
+        {lim_green_x, lim_green_y},
+        {lim_blue_x , lim_blue_y },
+        {lim_white_x, lim_white_y}
     };
 
-    m_params = get_transform_params(peakLuminance, limitingPrimaries, ap1_clamp);
+    const Primaries encodingPrimaries = {
+        {enc_red_x  , enc_red_y  },
+        {enc_green_x, enc_green_y},
+        {enc_blue_x , enc_blue_y },
+        {enc_white_x, enc_white_y}
+    };
+
+    auto start = std::chrono::high_resolution_clock::now();
+    m_params = ACES2::get_transform_params(peakLuminance, limitingPrimaries, encodingPrimaries, ap1_clamp);
+    auto end = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<float, std::milli> duration = end - start;
+    std::cerr << "Took " << duration.count() << "ms to compute DRT params\n";
 }
 
 void Renderer_ACES_OutputTransform20::apply(const void * inImg, void * outImg, long numPixels) const
@@ -914,7 +937,7 @@ void Renderer_ACES_OutputTransform20::apply(const void * inImg, void * outImg, l
 
 void Renderer_ACES_OutputTransform20::fwd(const void * inImg, void * outImg, long numPixels) const
 {
-    using namespace ACES2CPUHelpers;
+    using namespace ACES2;
 
     const float * in = (const float *)inImg;
     float * out = (float *)outImg;
@@ -937,7 +960,7 @@ void Renderer_ACES_OutputTransform20::fwd(const void * inImg, void * outImg, lon
 
 void Renderer_ACES_OutputTransform20::inv(const void * inImg, void * outImg, long numPixels) const
 {
-    using namespace ACES2CPUHelpers;
+    using namespace ACES2;
 
     const float * in = (const float *)inImg;
     float * out = (float *)outImg;

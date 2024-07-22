@@ -1054,7 +1054,6 @@ void RegisterAll(BuiltinTransformRegistryImpl & registry) noexcept
     {
         auto ACES2065_1_to_CIE_XYZ_video_rec709lim_2_0_Functor = [](OpRcPtrVec & ops)
         {
-            // TODO: Should sync with CTL white scaling and surround gamma factor
             // TODO: Should we apply the clamp to AP1 here, outside the fixed function?
 
             CreateFixedFunctionOp(ops, FixedFunctionOpData::ACES_OUTPUT_TRANSFORM_20_FWD, {
@@ -1064,6 +1063,11 @@ void RegisterAll(BuiltinTransformRegistryImpl & registry) noexcept
                 0.3000f, 0.6000f,   // Green
                 0.1500f, 0.0600f,   // Blue
                 0.3127f, 0.3290f,   // White
+                // Encoding gamut
+                0.6400f , 0.3300f,   // Red
+                0.3000f , 0.6000f,   // Green
+                0.1500f , 0.0600f,   // Blue
+                0.3127f , 0.3290f,   // White
                 1.f                 // Apply AP1 clamp
             });
 
@@ -1083,11 +1087,49 @@ void RegisterAll(BuiltinTransformRegistryImpl & registry) noexcept
     }
 
     {
+        auto ACES2065_1_to_CIE_XYZ_video_rec709lim_d60_2_0_Functor = [](OpRcPtrVec & ops)
+        {
+            CreateFixedFunctionOp(ops, FixedFunctionOpData::ACES_OUTPUT_TRANSFORM_20_FWD, {
+                100.f,              // Peak luminance in nits
+                // Limiting gamut
+                0.6400f , 0.3300f,   // Red
+                0.3000f , 0.6000f,   // Green
+                0.1500f , 0.0600f,   // Blue
+                0.32168f, 0.33767f,  // White
+                // Encoding gamut
+                0.6400f , 0.3300f,   // Red
+                0.3000f , 0.6000f,   // Green
+                0.1500f , 0.0600f,   // Blue
+                0.3127f , 0.3290f,   // White
+                1.f                  // Apply AP1 clamp
+            });
+
+            CreateRangeOp(ops,
+                        0., RangeOpData::EmptyValue(),
+                        0., RangeOpData::EmptyValue(),
+                        TRANSFORM_DIR_FORWARD);
+
+            MatrixOpData::MatrixArrayPtr matrix
+                = build_conversion_matrix_to_XYZ_D65(REC709::primaries, ADAPTATION_BRADFORD);
+            CreateMatrixOp(ops, matrix, TRANSFORM_DIR_FORWARD);
+        };
+
+        registry.addBuiltin("ACES-2-OUTPUT - ACES2065-1_to_CIE-XYZ-D65 - SDR-VIDEO-REC709D60lim",
+                                "Component of ACES 2 Output Transforms for SDR D65 video",
+                                ACES2065_1_to_CIE_XYZ_video_rec709lim_d60_2_0_Functor);
+    }
+
+    {
         auto ACES2065_1_to_CIE_XYZ_hdr_video_1000nits_p3lim_2_0_Functor = [](OpRcPtrVec & ops)
         {
             CreateFixedFunctionOp(ops, FixedFunctionOpData::ACES_OUTPUT_TRANSFORM_20_FWD, {
                 1000.f,              // Peak luminance in nits
                 // Limiting gamut
+                0.6800f, 0.3200f,   // Red
+                0.2650f, 0.6900f,   // Green
+                0.1500f, 0.0600f,   // Blue
+                0.3127f, 0.3290f,   // White
+                // Encoding gamut
                 0.6800f, 0.3200f,   // Red
                 0.2650f, 0.6900f,   // Green
                 0.1500f, 0.0600f,   // Blue

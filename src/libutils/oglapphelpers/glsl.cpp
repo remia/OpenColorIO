@@ -168,7 +168,7 @@ GLuint CompileShaderText(GLenum shaderType, const char * text)
         GLsizei len;
         glGetShaderInfoLog(shader, 1000, &len, log);
 
-        std::string err("OCIO Shader program compilation failed: ");
+        std::string err("OCIO Shader program compilation failed:\n");
         err += log;
         // err += "\n";
         // err += text;
@@ -181,8 +181,11 @@ GLuint CompileShaderText(GLenum shaderType, const char * text)
         GLsizei len;
         glGetShaderInfoLog(shader, 1000, &len, log);
 
-        std::cerr << "OCIO Shader program compilation log:\n";
-        std::cerr << log;
+        if (len > 0)
+        {
+            std::cerr << "OCIO Shader program compilation log:\n";
+            std::cerr << log;
+        }
     }
 
     return shader;
@@ -214,6 +217,18 @@ void LinkShaders(GLuint program, GLuint fragShader)
         std::string err("Shader link error:\n");
         err += log;
         throw Exception(err.c_str());
+    }
+    else
+    {
+        GLchar log[1000];
+        GLsizei len;
+        glGetProgramInfoLog(program, 1000, &len, log);
+
+        if (len > 0)
+        {
+            std::cerr << "OCIO Shader program link log:\n";
+            std::cerr << log;
+        }
     }
 }
 }
