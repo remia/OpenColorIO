@@ -4,8 +4,8 @@
 #ifndef INCLUDED_OCIO_ACES2INIT_H
 #define INCLUDED_OCIO_ACES2INIT_H
 
-#include "ACES2Types.h"
-#include "ACES2CPU.h"
+#include "Common.h"
+#include "CPU.h"
 
 
 namespace OCIO_NAMESPACE
@@ -14,7 +14,7 @@ namespace OCIO_NAMESPACE
 namespace ACES2
 {
 
-m33f generate_panlrcm(float ra, float ba)
+inline m33f generate_panlrcm(float ra, float ba)
 {
     m33f panlrcm_data = {
         ra,   1.f      ,  1.f/9.f,
@@ -37,7 +37,7 @@ m33f generate_panlrcm(float ra, float ba)
     return transpose_f33(scaled_panlrcm);
 }
 
-JMhParams initJMhParams(const Primaries &P)
+inline JMhParams initJMhParams(const Primaries &P)
 {
     JMhParams p;
 
@@ -95,7 +95,7 @@ JMhParams initJMhParams(const Primaries &P)
     return p;
 }
 
-constexpr Table3D make_gamut_table(const Primaries &P, float peakLuminance)
+inline constexpr Table3D make_gamut_table(const Primaries &P, float peakLuminance)
 {
     // TODO: Don't compute here?
     const m33f RGB_TO_XYZ = RGBtoXYZ_f33(P);
@@ -146,12 +146,12 @@ constexpr Table3D make_gamut_table(const Primaries &P, float peakLuminance)
     return gamutCuspTable;
 }
 
-constexpr bool any_below_zero(const f3 &rgb)
+inline constexpr bool any_below_zero(const f3 &rgb)
 {
     return (rgb[0] < 0. || rgb[1] < 0. || rgb[2] < 0.);
 }
 
-constexpr Table1D make_reach_m_table(const Primaries &P, float peakLuminance)
+inline constexpr Table1D make_reach_m_table(const Primaries &P, float peakLuminance)
 {
     // TODO: Don't compute here?
     const m33f XYZ_TO_RGB = XYZtoRGB_f33(P);
@@ -202,14 +202,14 @@ constexpr Table1D make_reach_m_table(const Primaries &P, float peakLuminance)
     return gamutReachTable;
 }
 
-constexpr bool outside_hull(const f3 &rgb)
+inline constexpr bool outside_hull(const f3 &rgb)
 {
     // limit value, once we cross this value, we are outside of the top gamut shell
     const float maxRGBtestVal = 1.0;
     return rgb[0] > maxRGBtestVal || rgb[1] > maxRGBtestVal || rgb[2] > maxRGBtestVal;
 }
 
-constexpr bool evaluate_gamma_fit(
+inline constexpr bool evaluate_gamma_fit(
     const f2 &JMcusp,
     const f3 testJMh[3],
     float topGamma,
@@ -238,7 +238,7 @@ constexpr bool evaluate_gamma_fit(
     return true;
 }
 
-constexpr Table1D make_upper_hull_gamma(
+inline constexpr Table1D make_upper_hull_gamma(
     const Table3D &gamutCuspTable,
     float peakLuminance,
     float limit_J_max,
@@ -320,7 +320,7 @@ constexpr Table1D make_upper_hull_gamma(
 }
 
 // Tonescale pre-calculations
-TSParams init_TSParams(float peakLuminance)
+inline ToneScaleParams init_ToneScaleParams(float peakLuminance)
 {
     // Preset constants that set the desired behavior for the curve
     const float n = peakLuminance;
@@ -349,7 +349,7 @@ TSParams init_TSParams(float peakLuminance)
     const float u_2 = pow((r_hit/m_1)/((r_hit/m_1) + w_2), g);
     const float m_2 = m_1 / u_2;
 
-    TSParams TonescaleParams = {
+    ToneScaleParams TonescaleParams = {
         n,
         n_r,
         g,
@@ -363,13 +363,13 @@ TSParams init_TSParams(float peakLuminance)
     return TonescaleParams;
 }
 
-ODTParams init_ODTParams(
+inline OutputTransformParams init_OutputTransformParams(
     float peakLuminance,
     Primaries limitingPrimaries,
     Primaries encodingPrimaries,
     bool clampAP1)
 {
-    const TSParams tsParams = init_TSParams(peakLuminance);
+    const ToneScaleParams tsParams = init_ToneScaleParams(peakLuminance);
     const JMhParams inputJMhParams = initJMhParams(ACES_AP0::primaries);
 
     float limit_J_max = Y_to_Hellwig_J(peakLuminance, inputJMhParams);
@@ -383,7 +383,7 @@ ODTParams init_ODTParams(
     const float model_gamma = 1.f / (surround[1] * (1.48f + sqrt(Y_b / L_A)));
     const float focus_dist = focus_distance + focus_distance * focus_distance_scaling * log_peak;
 
-    ODTParams params{};
+    OutputTransformParams params{};
 
     params.clamp_ap1 = clampAP1;
 
@@ -447,7 +447,7 @@ ODTParams init_ODTParams(
 
 // TODO: Use map to cache results for custom parameters
 // TODO: Encoding primaries needed for creative white point handling?
-ODTParams get_transform_params(
+inline OutputTransformParams get_transform_params(
     float peakLuminance,
     const Primaries &limitingPrimaries,
     const Primaries &encodingPrimaries,
@@ -463,7 +463,7 @@ ODTParams get_transform_params(
     // }
     // else
     {
-        return init_ODTParams(peakLuminance, limitingPrimaries, encodingPrimaries, ap1Clamp);
+        return init_OutputTransformParams(peakLuminance, limitingPrimaries, encodingPrimaries, ap1Clamp);
     }
 }
 

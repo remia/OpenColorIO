@@ -7,8 +7,9 @@
 
 #include <OpenColorIO/OpenColorIO.h>
 
-#include "ACES2Init.h"
-#include "ACES2CPU.h"
+#include "ACES2/Common.h"
+#include "ACES2/Init.h"
+#include "ACES2/CPU.h"
 #include "BitDepthUtils.h"
 #include "MathUtils.h"
 #include "ops/fixedfunction/FixedFunctionOpCPU.h"
@@ -143,7 +144,7 @@ private:
 
 protected:
     bool m_fwd;
-    ACES2::ODTParams m_params;
+    ACES2::OutputTransformParams m_params;
 };
 
 class Renderer_ACES_AP0_TO_JMh_20 : public OpCPU

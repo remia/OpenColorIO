@@ -5,14 +5,14 @@
 #define INCLUDED_OCIO_ACES2COLORLIB_H
 
 #include "transforms/builtins/ColorMatrixHelpers.h"
-#include "ACES2MatrixLib.h"
+#include "MatrixLib.h"
 
 
 namespace OCIO_NAMESPACE
 {
 
 
-f3 HSV_to_RGB(const f3 &HSV)
+inline f3 HSV_to_RGB(const f3 &HSV)
 {
     const float C = HSV[2] * HSV[1];
     const float X = C * (1.f - std::abs(std::fmod(HSV[0] * 6.f, 2.f) - 1.f));
@@ -36,21 +36,21 @@ f3 HSV_to_RGB(const f3 &HSV)
     return RGB;
 }
 
-m33f RGBtoXYZ_f33(const Primaries &C)
+inline m33f RGBtoXYZ_f33(const Primaries &C)
 {
     return m33_from_ocio_matrix_array(
         *build_conversion_matrix(C, CIE_XYZ_ILLUM_E::primaries, ADAPTATION_NONE)
     );
 }
 
-m33f XYZtoRGB_f33(const Primaries &C)
+inline m33f XYZtoRGB_f33(const Primaries &C)
 {
     return m33_from_ocio_matrix_array(
         *build_conversion_matrix(C, CIE_XYZ_ILLUM_E::primaries, ADAPTATION_NONE)->inverse()
     );
 }
 
-m33f RGBtoRGB_f33(const Primaries &Csrc, const Primaries &Cdst)
+inline m33f RGBtoRGB_f33(const Primaries &Csrc, const Primaries &Cdst)
 {
     return mult_f33_f33(XYZtoRGB_f33(Cdst), RGBtoXYZ_f33(Csrc));
 }

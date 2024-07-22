@@ -4,8 +4,8 @@
 #ifndef INCLUDED_OCIO_ACES2TYPES_H
 #define INCLUDED_OCIO_ACES2TYPES_H
 
-#include "ACES2MatrixLib.h"
-#include "ACES2ColorLib.h"
+#include "MatrixLib.h"
+#include "ColorLib.h"
 
 
 namespace OCIO_NAMESPACE
@@ -48,7 +48,7 @@ struct JMhParams
     m33f MATRIX_16_INV;
 };
 
-struct TSParams
+struct ToneScaleParams
 {
     float n;
     float n_r;
@@ -60,7 +60,7 @@ struct TSParams
     float m_2;
 };
 
-struct ODTParams
+struct OutputTransformParams
 {
     bool clamp_ap1;
 
@@ -159,31 +159,31 @@ constexpr float gammaAccuracy = 1e-5;
 // Logging (debug only)
 //////////////////////////////////////////////////////////////////////////
 
-void print_v(const std::string &name, float v)
+inline void print_v(const std::string &name, float v)
 {
     std::cerr << name << "\n";
     std::cerr << std::fixed << std::setprecision(9) << "\t" << v << "\n";
 }
 
-void print_v2(const std::string &name, const f2 &v)
+inline void print_v2(const std::string &name, const f2 &v)
 {
     std::cerr << name << "\n";
     std::cerr << std::fixed << std::setprecision(9) << "\t" << v[0] << "\t" << v[1] << "\n";
 }
 
-void print_v3(const std::string &name, const f3 &v)
+inline void print_v3(const std::string &name, const f3 &v)
 {
     std::cerr << name << "\n";
     std::cerr << std::fixed << std::setprecision(9) << "\t" << v[0] << "\t" << v[1] << "\t" << v[2] << "\n";
 }
 
-void print_v4(const std::string &name, const f4 &v)
+inline void print_v4(const std::string &name, const f4 &v)
 {
     std::cerr << name << "\n";
     std::cerr << std::fixed << std::setprecision(9) << "\t" << v[0] << "\t" << v[1] << "\t" << v[2] << "\t" << v[3] << "\n";
 }
 
-void print_m33(const std::string &name, const m33f &m)
+inline void print_m33(const std::string &name, const m33f &m)
 {
     std::cerr << name << "\n";
     std::cerr << std::fixed << std::setprecision(9) << "\t" << m[0] << "\t" << m[1] << "\t" << m[2] << "\n";
@@ -191,7 +191,7 @@ void print_m33(const std::string &name, const m33f &m)
     std::cerr << std::fixed << std::setprecision(9) << "\t" << m[6] << "\t" << m[7] << "\t" << m[8] << "\n";
 }
 
-void print_table3D(const std::string &name, const Table3D &gt)
+inline void print_table3D(const std::string &name, const Table3D &gt)
 {
     std::cerr << name << "\n";
     for (int i = 0; i < gt.size; ++i)
@@ -203,7 +203,7 @@ void print_table3D(const std::string &name, const Table3D &gt)
     }
 }
 
-void print_table1D(const std::string &name, const Table1D &gt)
+inline void print_table1D(const std::string &name, const Table1D &gt)
 {
     std::cerr << name << "\n";
     for (int i = 0; i < gt.size; ++i)

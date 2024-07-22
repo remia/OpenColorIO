@@ -10,7 +10,7 @@
 #include <limits>
 #include <iostream>
 
-#include "ACES2Types.h"
+#include "Common.h"
 
 
 namespace OCIO_NAMESPACE
@@ -133,27 +133,27 @@ constexpr float reachMFromTable(float h, const Table1D &gt)
 // Post adaptation non linear response compression
 constexpr float panlrc_forward(float v, float F_L)
 {
-    float F_L_v = pow(F_L * std::abs(v) / 100.f, 0.42f);
+    float F_L_v = pow(F_L * std::abs(v) / reference_luminance, 0.42f);
     float c = (400.f * std::copysign(1., v) * F_L_v) / (27.13f + F_L_v);
     return c;
 }
 
 constexpr float panlrc_inverse(float v, float F_L)
 {
-    float p = std::copysign(1., v) * 100.f / F_L * pow((27.13f * std::abs(v) / (400.f - std::abs(v))), 1.f / 0.42f);
+    float p = std::copysign(1., v) * reference_luminance / F_L * pow((27.13f * std::abs(v) / (400.f - std::abs(v))), 1.f / 0.42f);
     return p;
 }
 
 constexpr float Hellwig_J_to_Y(float J, const JMhParams &params)
 {
-    const float A = params.A_w_J * pow(std::abs(J) / 100.f, 1.f / (surround[1] * params.z));
-    return std::copysign(1.f, J) * 100.f / params.F_L * pow((27.13f * A) / (400.f - A), 1.f / 0.42f);
+    const float A = params.A_w_J * pow(std::abs(J) / reference_luminance, 1.f / (surround[1] * params.z));
+    return std::copysign(1.f, J) * reference_luminance / params.F_L * pow((27.13f * A) / (400.f - A), 1.f / 0.42f);
 }
 
 constexpr float Y_to_Hellwig_J(float Y, const JMhParams &params)
 {
     float F_L_Y = pow(params.F_L * std::abs(Y) / 100., 0.42);
-    return std::copysign(1.f, Y) * 100.f * pow(((400.f * F_L_Y) / (27.13f + F_L_Y)) / params.A_w_J, surround[1] * params.z);
+    return std::copysign(1.f, Y) * reference_luminance * pow(((400.f * F_L_Y) / (27.13f + F_L_Y)) / params.A_w_J, surround[1] * params.z);
 }
 
 constexpr f3 XYZ_to_Hellwig2022_JMh(const f3 &XYZ, const JMhParams &params)
@@ -175,7 +175,11 @@ constexpr f3 XYZ_to_Hellwig2022_JMh(const f3 &XYZ, const JMhParams &params)
         panlrc_forward(RGB_c[2], params.F_L)
     };
 
-    // Step 4 - Converting to preliminary cartesian  coordinates
+    // Converting to preliminary cartesian coordinates
+    // TODO: Can be a matrix, then use inverse in the reverse function
+    // to simplify code. Or just use the inverse formula.
+    // Can also hardcode ra and ba directly to remove need for panlrcm
+    const float A = ra * RGB_a[0] + RGB_a[1] + ba * RGB_a[2];
     const float a = RGB_a[0] - 12.f * RGB_a[1] / 11.f + RGB_a[2] / 11.f;
     const float b = (RGB_a[0] + RGB_a[1] - 2.f * RGB_a[2]) / 9.f;
 
@@ -183,13 +187,10 @@ constexpr f3 XYZ_to_Hellwig2022_JMh(const f3 &XYZ, const JMhParams &params)
     const float hr = atan2(b, a);
     const float h = wrap_to_360(radians_to_degrees(hr));
 
-    // Step 6 - Computing achromatic responses for the stimulus
-    const float A = ra * RGB_a[0] + RGB_a[1] + ba * RGB_a[2];
+    // Computing the correlate of lightness, J
+    const float J = reference_luminance * pow( A / params.A_w, surround[1] * params.z);
 
-    // Step 7 - Computing the correlate of lightness, J
-    const float J = 100.f * pow( A / params.A_w, surround[1] * params.z);
-
-    // Step 9 - Computing the correlate of colourfulness, M
+    // Computing the correlate of colourfulness, M
     const float M = J == 0.f ? 0.f : 43.f * surround[2] * sqrt(a * a + b * b);
 
     return {J, M, h};
@@ -204,19 +205,15 @@ constexpr f3 Hellwig2022_JMh_to_XYZ(const f3 &JMh, const JMhParams &params)
     const float hr = degrees_to_radians(h);
 
     // Computing achromatic respons A for the stimulus
-    const float A = params.A_w * pow(J / 100.f, 1. / (surround[1] * params.z));
+    const float A = params.A_w * pow(J / reference_luminance, 1. / (surround[1] * params.z));
 
-    // Computing P_p_1 to P_p_2
-    const float P_p_1 = 43.f * surround[2];
-    const float P_p_2 = A;
-
-    // Step 3 - Computing opponent colour dimensions a and b
-    const float gamma = M / P_p_1;
-    const float a = gamma * cos(hr);
-    const float b = gamma * sin(hr);
+    // Computing opponent colour dimensions a and b
+    const float scale = M / (43.f * surround[2]);
+    const float a = scale * cos(hr);
+    const float b = scale * sin(hr);
 
     // Step 4 - Applying post-adaptation non-linear response compression matrix
-    const f3 vec = {P_p_2, a, b};
+    const f3 vec = {A, a, b};
     const f3 RGB_a = mult_f_f3( 1.0/1403.0, mult_f3_f33(vec, params.panlrcm));
 
     // Step 5 - Applying the inverse post-adaptation non-linear respnose compression
@@ -260,7 +257,7 @@ constexpr f3 JMh_to_RGB(const f3 &JMh, const m33f &XYZ_TO_RGB, float luminance, 
 // Tonescale and Chroma compression
 //////////////////////////////////////////////////////////////////////////
 
-constexpr float tonescale_fwd(float x, const ODTParams &params)
+constexpr float tonescale_fwd(float x, const OutputTransformParams &params)
 {
     float f = params.m_2 * pow(std::max(0.f, x) / (x + params.s_2), params.g);
     float h = std::max(0.f, f * f / (f + params.t_1));
@@ -268,7 +265,7 @@ constexpr float tonescale_fwd(float x, const ODTParams &params)
     return h * params.n_r;
 }
 
-constexpr float tonescale_inv(float Y, const ODTParams &params)
+constexpr float tonescale_inv(float Y, const OutputTransformParams &params)
 {
     float Z = std::max(0.f, std::min(params.peakLuminance / (params.u_2 * params.n_r), Y));
     float h = (Z + sqrt(Z * (4.f * params.t_1 + Z))) / 2.f;
@@ -319,7 +316,7 @@ constexpr float chromaCompressNorm(float h, float chromaCompressScale)
     return M * chromaCompressScale;
 }
 
-constexpr float chromaCompression_fwd(const f3 &JMh, float origJ, const ODTParams &params)
+constexpr float chromaCompression_fwd(const f3 &JMh, float origJ, const OutputTransformParams &params)
 {
     const float J = JMh[0];
     float M = JMh[1];
@@ -348,7 +345,7 @@ constexpr float chromaCompression_fwd(const f3 &JMh, float origJ, const ODTParam
     return M;
 }
 
-constexpr float chromaCompression_inv(const f3 &JMh, float origJ, const ODTParams &params)
+constexpr float chromaCompression_inv(const f3 &JMh, float origJ, const OutputTransformParams &params)
 {
     const float J = JMh[0];
     float M = JMh[1];
@@ -376,7 +373,7 @@ constexpr float chromaCompression_inv(const f3 &JMh, float origJ, const ODTParam
     return M;
 }
 
-f3 tonemapAndCompress_fwd(const f3 &inputJMh, const ODTParams &params)
+f3 tonemapAndCompress_fwd(const f3 &inputJMh, const OutputTransformParams &params)
 {
     const float linear = Hellwig_J_to_Y(inputJMh[0], params.inputJMhParams) / reference_luminance;
     // print_v("Tonemap Y", linear);
@@ -390,7 +387,7 @@ f3 tonemapAndCompress_fwd(const f3 &inputJMh, const ODTParams &params)
     return {outputJMh[0], M, outputJMh[2]};
 }
 
-constexpr f3 tonemapAndCompress_inv(const f3 &JMh, const ODTParams &params)
+constexpr f3 tonemapAndCompress_inv(const f3 &JMh, const OutputTransformParams &params)
 {
     float luminance = Hellwig_J_to_Y(JMh[0], params.inputJMhParams);
     float linear = tonescale_inv(luminance / reference_luminance, params);
@@ -495,7 +492,7 @@ constexpr f3 find_gamut_boundary_intersection(const f3 &JMh_s, const f2 &JM_cusp
     return {J_boundary, M_boundary, J_intersect_source};
 }
 
-f3 get_reach_boundary(float J, float M, float h, const f2 &JMcusp, const ODTParams &params)
+f3 get_reach_boundary(float J, float M, float h, const f2 &JMcusp, const OutputTransformParams &params)
 {
     float limit_J_max = params.limit_J_max;
     float mid_J = params.mid_J;
@@ -569,7 +566,7 @@ float compression_function(float x, float threshold, float limit, bool invert=fa
     return xCompressed;
 }
 
-f3 compressGamut(const f3 &JMh, const ODTParams& params, float Jx, bool invert=false)
+f3 compressGamut(const f3 &JMh, const OutputTransformParams& params, float Jx, bool invert=false)
 {
     float limit_J_max = params.limit_J_max;
     float mid_J = params.mid_J;
@@ -609,12 +606,12 @@ f3 compressGamut(const f3 &JMh, const ODTParams& params, float Jx, bool invert=f
     return {JMcompressed[0], JMcompressed[1], JMh[2]};
 }
 
-f3 gamutMap_fwd(const f3 &JMh, const ODTParams &params)
+f3 gamutMap_fwd(const f3 &JMh, const OutputTransformParams &params)
 {
     return compressGamut(JMh, params, JMh[0], false);
 }
 
-f3 gamutMap_inv(const f3 &JMh, const ODTParams &params)
+f3 gamutMap_inv(const f3 &JMh, const OutputTransformParams &params)
 {
     const f2 JMcusp = cuspFromTable( JMh[2], params.gamut_cusp_table);
     float Jx = JMh[0];
@@ -635,7 +632,7 @@ f3 gamutMap_inv(const f3 &JMh, const ODTParams &params)
 // Full transform
 //////////////////////////////////////////////////////////////////////////
 
-f3 outputTransform_fwd(const f3 &RGB, const ODTParams &params)
+f3 outputTransform_fwd(const f3 &RGB, const OutputTransformParams &params)
 {
     f3 XYZ = mult_f3_f33(RGB, params.INPUT_RGB_TO_XYZ);
 
@@ -662,7 +659,7 @@ f3 outputTransform_fwd(const f3 &RGB, const ODTParams &params)
     return outputRGB;
 }
 
-f3 outputTransform_inv(const f3 &RGB, const ODTParams &params)
+f3 outputTransform_inv(const f3 &RGB, const OutputTransformParams &params)
 {
     f3 outputRGB = RGB;
 
