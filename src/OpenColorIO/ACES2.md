@@ -30,6 +30,23 @@ TODO List
 * Add GPU shader generation
 
 
+Is it fine to release an un-optimized version of ACES 2 in 2.4, then an optimized
+version in 2.4.1 that will probably have slightly different precision?
+-> Update slide to mention 2.4.0 will be a beta release of ACES 2
+-> Strict output compatibility will not be maintained as further optimizations
+   are made to the algorithm
+
+Having a single FixedFunction to allow easy custom OT creation seem beneficial
+But in theory, it might be cleaner to implement the OT as OCIO existing Ops where
+possible, like is done for ACES 1. Currently, a FixedFunction transform/ops cannot
+spawn other ops though, and only allow custom C++ / Shader code.
+
+Similar issue with the Tonemap / ChromaCompress which currently need to be linked
+to pipe the original J value (before tone scale) to the chroma compress algorithm.
+If we were to derive a Spline from the tonescale workflow, we would need to embed
+it inside the overall FixFunctionOp.
+
+
 Performance number
 ------------------
 

@@ -147,69 +147,69 @@ protected:
     ACES2::OutputTransformParams m_params;
 };
 
-class Renderer_ACES_AP0_TO_JMh_20 : public OpCPU
-{
-public:
-    Renderer_ACES_AP0_TO_JMh_20() = delete;
-    explicit Renderer_ACES_AP0_TO_JMh_20(ConstFixedFunctionOpDataRcPtr & data);
+// class Renderer_ACES_AP0_TO_JMh_20 : public OpCPU
+// {
+// public:
+//     Renderer_ACES_AP0_TO_JMh_20() = delete;
+//     explicit Renderer_ACES_AP0_TO_JMh_20(ConstFixedFunctionOpDataRcPtr & data);
 
-    void apply(const void * inImg, void * outImg, long numPixels) const override;
+//     void apply(const void * inImg, void * outImg, long numPixels) const override;
 
-private:
-    void fwd(const void * inImg, void * outImg, long numPixels) const;
-    void inv(const void * inImg, void * outImg, long numPixels) const;
+// private:
+//     void fwd(const void * inImg, void * outImg, long numPixels) const;
+//     void inv(const void * inImg, void * outImg, long numPixels) const;
 
-protected:
-    bool m_fwd;
-};
+// protected:
+//     bool m_fwd;
+// };
 
-class Renderer_ACES_TONESCALE_20 : public OpCPU
-{
-public:
-    Renderer_ACES_TONESCALE_20() = delete;
-    explicit Renderer_ACES_TONESCALE_20(ConstFixedFunctionOpDataRcPtr & data);
+// class Renderer_ACES_TONESCALE_20 : public OpCPU
+// {
+// public:
+//     Renderer_ACES_TONESCALE_20() = delete;
+//     explicit Renderer_ACES_TONESCALE_20(ConstFixedFunctionOpDataRcPtr & data);
 
-    void apply(const void * inImg, void * outImg, long numPixels) const override;
+//     void apply(const void * inImg, void * outImg, long numPixels) const override;
 
-private:
-    void fwd(const void * inImg, void * outImg, long numPixels) const;
-    void inv(const void * inImg, void * outImg, long numPixels) const;
+// private:
+//     void fwd(const void * inImg, void * outImg, long numPixels) const;
+//     void inv(const void * inImg, void * outImg, long numPixels) const;
 
-protected:
-    bool m_fwd;
-};
+// protected:
+//     bool m_fwd;
+// };
 
-class Renderer_ACES_GAMUT_MAP_20 : public OpCPU
-{
-public:
-    Renderer_ACES_GAMUT_MAP_20() = delete;
-    explicit Renderer_ACES_GAMUT_MAP_20(ConstFixedFunctionOpDataRcPtr & data);
+// class Renderer_ACES_GAMUT_MAP_20 : public OpCPU
+// {
+// public:
+//     Renderer_ACES_GAMUT_MAP_20() = delete;
+//     explicit Renderer_ACES_GAMUT_MAP_20(ConstFixedFunctionOpDataRcPtr & data);
 
-    void apply(const void * inImg, void * outImg, long numPixels) const override;
+//     void apply(const void * inImg, void * outImg, long numPixels) const override;
 
-private:
-    void fwd(const void * inImg, void * outImg, long numPixels) const;
-    void inv(const void * inImg, void * outImg, long numPixels) const;
+// private:
+//     void fwd(const void * inImg, void * outImg, long numPixels) const;
+//     void inv(const void * inImg, void * outImg, long numPixels) const;
 
-protected:
-    bool m_fwd;
-};
+// protected:
+//     bool m_fwd;
+// };
 
-class Renderer_ACES_RGB_TO_JMh_20 : public OpCPU
-{
-public:
-    Renderer_ACES_RGB_TO_JMh_20() = delete;
-    explicit Renderer_ACES_RGB_TO_JMh_20(ConstFixedFunctionOpDataRcPtr & data);
+// class Renderer_ACES_RGB_TO_JMh_20 : public OpCPU
+// {
+// public:
+//     Renderer_ACES_RGB_TO_JMh_20() = delete;
+//     explicit Renderer_ACES_RGB_TO_JMh_20(ConstFixedFunctionOpDataRcPtr & data);
 
-    void apply(const void * inImg, void * outImg, long numPixels) const override;
+//     void apply(const void * inImg, void * outImg, long numPixels) const override;
 
-private:
-    void fwd(const void * inImg, void * outImg, long numPixels) const;
-    void inv(const void * inImg, void * outImg, long numPixels) const;
+// private:
+//     void fwd(const void * inImg, void * outImg, long numPixels) const;
+//     void inv(const void * inImg, void * outImg, long numPixels) const;
 
-protected:
-    bool m_fwd;
-};
+// protected:
+//     bool m_fwd;
+// };
 
 class Renderer_REC2100_Surround : public OpCPU
 {
@@ -982,271 +982,271 @@ void Renderer_ACES_OutputTransform20::inv(const void * inImg, void * outImg, lon
     }
 }
 
-Renderer_ACES_AP0_TO_JMh_20::Renderer_ACES_AP0_TO_JMh_20(ConstFixedFunctionOpDataRcPtr & data)
-    :   OpCPU()
-{
-    m_fwd = FixedFunctionOpData::ACES_AP0_TO_JMh_20 == data->getStyle();
-}
+// Renderer_ACES_AP0_TO_JMh_20::Renderer_ACES_AP0_TO_JMh_20(ConstFixedFunctionOpDataRcPtr & data)
+//     :   OpCPU()
+// {
+//     m_fwd = FixedFunctionOpData::ACES_AP0_TO_JMh_20 == data->getStyle();
+// }
 
-void Renderer_ACES_AP0_TO_JMh_20::apply(const void * inImg, void * outImg, long numPixels) const
-{
-    if (m_fwd)
-    {
-        fwd(inImg, outImg, numPixels);
-    }
-    else
-    {
-        inv(inImg, outImg, numPixels);
-    }
-}
+// void Renderer_ACES_AP0_TO_JMh_20::apply(const void * inImg, void * outImg, long numPixels) const
+// {
+//     if (m_fwd)
+//     {
+//         fwd(inImg, outImg, numPixels);
+//     }
+//     else
+//     {
+//         inv(inImg, outImg, numPixels);
+//     }
+// }
 
-void Renderer_ACES_AP0_TO_JMh_20::fwd(const void * inImg, void * outImg, long numPixels) const
-{
-    using namespace ACES2CPUHelpers;
+// void Renderer_ACES_AP0_TO_JMh_20::fwd(const void * inImg, void * outImg, long numPixels) const
+// {
+//     using namespace ACES2;
 
-    const float * in = (const float *)inImg;
-    float * out = (float *)outImg;
+//     const float * in = (const float *)inImg;
+//     float * out = (float *)outImg;
 
-    for(long idx=0; idx<numPixels; ++idx)
-    {
-        const f3 ACES = {in[0], in[1], in[2]};
+//     for(long idx=0; idx<numPixels; ++idx)
+//     {
+//         const f3 ACES = {in[0], in[1], in[2]};
 
-        f3 XYZ = mult_f3_f33(ACES, srgb_100nits_odt.INPUT_RGB_TO_XYZ);
+//         f3 XYZ = mult_f3_f33(ACES, srgb_100nits_odt.INPUT_RGB_TO_XYZ);
 
-        // Clamp to AP1
-        if (srgb_100nits_odt.clamp_ap1)
-        {
-            const f3 AP1 = mult_f3_f33(XYZ, XYZ_TO_AP1);
-            const f3 AP1_clamped = clamp_f3(AP1, 0.f, std::numeric_limits<float>::max());
-            XYZ = mult_f3_f33(AP1_clamped, AP1_TO_XYZ);
-        }
+//         // Clamp to AP1
+//         if (srgb_100nits_odt.clamp_ap1)
+//         {
+//             const f3 AP1 = mult_f3_f33(XYZ, XYZ_TO_AP1);
+//             const f3 AP1_clamped = clamp_f3(AP1, 0.f, std::numeric_limits<float>::max());
+//             XYZ = mult_f3_f33(AP1_clamped, AP1_TO_XYZ);
+//         }
 
-        const f3 JMh = RGB_to_JMh(XYZ, Identity_M33, srgb_100nits_odt.peakLuminance, srgb_100nits_odt.inputJMhParams);
+//         const f3 JMh = RGB_to_JMh(XYZ, Identity_M33, srgb_100nits_odt.peakLuminance, srgb_100nits_odt.inputJMhParams);
 
-        out[0] = JMh[0];
-        out[1] = JMh[1];
-        out[2] = JMh[2];
-        out[3] = in[3];
+//         out[0] = JMh[0];
+//         out[1] = JMh[1];
+//         out[2] = JMh[2];
+//         out[3] = in[3];
 
-        in  += 4;
-        out += 4;
-    }
-}
+//         in  += 4;
+//         out += 4;
+//     }
+// }
 
-void Renderer_ACES_AP0_TO_JMh_20::inv(const void * inImg, void * outImg, long numPixels) const
-{
-    using namespace ACES2CPUHelpers;
+// void Renderer_ACES_AP0_TO_JMh_20::inv(const void * inImg, void * outImg, long numPixels) const
+// {
+//     using namespace ACES2;
 
-    const float * in = (const float *)inImg;
-    float * out = (float *)outImg;
+//     const float * in = (const float *)inImg;
+//     float * out = (float *)outImg;
 
-    for(long idx=0; idx<numPixels; ++idx)
-    {
-        const f3 JMh = {in[0], in[1], in[2]};
+//     for(long idx=0; idx<numPixels; ++idx)
+//     {
+//         const f3 JMh = {in[0], in[1], in[2]};
 
-        const f3 ACES = JMh_to_RGB(JMh, srgb_100nits_odt.INPUT_XYZ_TO_RGB, srgb_100nits_odt.peakLuminance, srgb_100nits_odt.inputJMhParams);
+//         const f3 ACES = JMh_to_RGB(JMh, srgb_100nits_odt.INPUT_XYZ_TO_RGB, srgb_100nits_odt.peakLuminance, srgb_100nits_odt.inputJMhParams);
 
-        out[0] = ACES[0];
-        out[1] = ACES[1];
-        out[2] = ACES[2];
-        out[3] = in[3];
+//         out[0] = ACES[0];
+//         out[1] = ACES[1];
+//         out[2] = ACES[2];
+//         out[3] = in[3];
 
-        in  += 4;
-        out += 4;
-    }
-}
+//         in  += 4;
+//         out += 4;
+//     }
+// }
 
-Renderer_ACES_TONESCALE_20::Renderer_ACES_TONESCALE_20(ConstFixedFunctionOpDataRcPtr & data)
-    :   OpCPU()
-{
-    m_fwd = FixedFunctionOpData::ACES_TONESCALE_20_FWD == data->getStyle();
-}
+// Renderer_ACES_TONESCALE_20::Renderer_ACES_TONESCALE_20(ConstFixedFunctionOpDataRcPtr & data)
+//     :   OpCPU()
+// {
+//     m_fwd = FixedFunctionOpData::ACES_TONESCALE_20_FWD == data->getStyle();
+// }
 
-void Renderer_ACES_TONESCALE_20::apply(const void * inImg, void * outImg, long numPixels) const
-{
-    if (m_fwd)
-    {
-        fwd(inImg, outImg, numPixels);
-    }
-    else
-    {
-        inv(inImg, outImg, numPixels);
-    }
-}
+// void Renderer_ACES_TONESCALE_20::apply(const void * inImg, void * outImg, long numPixels) const
+// {
+//     if (m_fwd)
+//     {
+//         fwd(inImg, outImg, numPixels);
+//     }
+//     else
+//     {
+//         inv(inImg, outImg, numPixels);
+//     }
+// }
 
-void Renderer_ACES_TONESCALE_20::fwd(const void * inImg, void * outImg, long numPixels) const
-{
-    using namespace ACES2CPUHelpers;
+// void Renderer_ACES_TONESCALE_20::fwd(const void * inImg, void * outImg, long numPixels) const
+// {
+//     using namespace ACES2;
 
-    const float * in = (const float *)inImg;
-    float * out = (float *)outImg;
+//     const float * in = (const float *)inImg;
+//     float * out = (float *)outImg;
 
-    for(long idx=0; idx<numPixels; ++idx)
-    {
-        const f3 JMh = {in[0], in[1], in[2]};
+//     for(long idx=0; idx<numPixels; ++idx)
+//     {
+//         const f3 JMh = {in[0], in[1], in[2]};
 
-        const f3 toneMappedJMh = tonemapAndCompress_fwd(JMh, srgb_100nits_odt);
+//         const f3 toneMappedJMh = tonemapAndCompress_fwd(JMh, srgb_100nits_odt);
 
-        out[0] = toneMappedJMh[0];
-        out[1] = toneMappedJMh[1];
-        out[2] = toneMappedJMh[2];
-        out[3] = in[3];
+//         out[0] = toneMappedJMh[0];
+//         out[1] = toneMappedJMh[1];
+//         out[2] = toneMappedJMh[2];
+//         out[3] = in[3];
 
-        in  += 4;
-        out += 4;
-    }
-}
+//         in  += 4;
+//         out += 4;
+//     }
+// }
 
-void Renderer_ACES_TONESCALE_20::inv(const void * inImg, void * outImg, long numPixels) const
-{
-    using namespace ACES2CPUHelpers;
+// void Renderer_ACES_TONESCALE_20::inv(const void * inImg, void * outImg, long numPixels) const
+// {
+//     using namespace ACES2;
 
-    const float * in = (const float *)inImg;
-    float * out = (float *)outImg;
+//     const float * in = (const float *)inImg;
+//     float * out = (float *)outImg;
 
-    for(long idx=0; idx<numPixels; ++idx)
-    {
-        const f3 toneMappedJMh = {in[0], in[1], in[2]};
+//     for(long idx=0; idx<numPixels; ++idx)
+//     {
+//         const f3 toneMappedJMh = {in[0], in[1], in[2]};
 
-        const f3 JMh = tonemapAndCompress_inv(toneMappedJMh, srgb_100nits_odt);
+//         const f3 JMh = tonemapAndCompress_inv(toneMappedJMh, srgb_100nits_odt);
 
-        out[0] = JMh[0];
-        out[1] = JMh[1];
-        out[2] = JMh[2];
-        out[3] = in[3];
+//         out[0] = JMh[0];
+//         out[1] = JMh[1];
+//         out[2] = JMh[2];
+//         out[3] = in[3];
 
-        in  += 4;
-        out += 4;
-    }
-}
+//         in  += 4;
+//         out += 4;
+//     }
+// }
 
-Renderer_ACES_GAMUT_MAP_20::Renderer_ACES_GAMUT_MAP_20(ConstFixedFunctionOpDataRcPtr & data)
-    :   OpCPU()
-{
-    m_fwd = FixedFunctionOpData::ACES_GAMUT_MAP_20_FWD == data->getStyle();
-}
+// Renderer_ACES_GAMUT_MAP_20::Renderer_ACES_GAMUT_MAP_20(ConstFixedFunctionOpDataRcPtr & data)
+//     :   OpCPU()
+// {
+//     m_fwd = FixedFunctionOpData::ACES_GAMUT_MAP_20_FWD == data->getStyle();
+// }
 
-void Renderer_ACES_GAMUT_MAP_20::apply(const void * inImg, void * outImg, long numPixels) const
-{
-    if (m_fwd)
-    {
-        fwd(inImg, outImg, numPixels);
-    }
-    else
-    {
-        inv(inImg, outImg, numPixels);
-    }
-}
+// void Renderer_ACES_GAMUT_MAP_20::apply(const void * inImg, void * outImg, long numPixels) const
+// {
+//     if (m_fwd)
+//     {
+//         fwd(inImg, outImg, numPixels);
+//     }
+//     else
+//     {
+//         inv(inImg, outImg, numPixels);
+//     }
+// }
 
-void Renderer_ACES_GAMUT_MAP_20::fwd(const void * inImg, void * outImg, long numPixels) const
-{
-    using namespace ACES2CPUHelpers;
+// void Renderer_ACES_GAMUT_MAP_20::fwd(const void * inImg, void * outImg, long numPixels) const
+// {
+//     using namespace ACES2;
 
-    const float * in = (const float *)inImg;
-    float * out = (float *)outImg;
+//     const float * in = (const float *)inImg;
+//     float * out = (float *)outImg;
 
-    for(long idx=0; idx<numPixels; ++idx)
-    {
-        const f3 JMh = {in[0], in[1], in[2]};
+//     for(long idx=0; idx<numPixels; ++idx)
+//     {
+//         const f3 JMh = {in[0], in[1], in[2]};
 
-        const f3 compressedJMh = gamutMap_fwd(JMh, srgb_100nits_odt);
+//         const f3 compressedJMh = gamutMap_fwd(JMh, srgb_100nits_odt);
 
-        out[0] = compressedJMh[0];
-        out[1] = compressedJMh[1];
-        out[2] = compressedJMh[2];
-        out[3] = in[3];
+//         out[0] = compressedJMh[0];
+//         out[1] = compressedJMh[1];
+//         out[2] = compressedJMh[2];
+//         out[3] = in[3];
 
-        in  += 4;
-        out += 4;
-    }
-}
+//         in  += 4;
+//         out += 4;
+//     }
+// }
 
-void Renderer_ACES_GAMUT_MAP_20::inv(const void * inImg, void * outImg, long numPixels) const
-{
-    using namespace ACES2CPUHelpers;
+// void Renderer_ACES_GAMUT_MAP_20::inv(const void * inImg, void * outImg, long numPixels) const
+// {
+//     using namespace ACES2;
 
-    const float * in = (const float *)inImg;
-    float * out = (float *)outImg;
+//     const float * in = (const float *)inImg;
+//     float * out = (float *)outImg;
 
-    for(long idx=0; idx<numPixels; ++idx)
-    {
-        const f3 compressedJMh = {in[0], in[1], in[2]};
+//     for(long idx=0; idx<numPixels; ++idx)
+//     {
+//         const f3 compressedJMh = {in[0], in[1], in[2]};
 
-        const f3 JMh = gamutMap_inv(compressedJMh, srgb_100nits_odt);
+//         const f3 JMh = gamutMap_inv(compressedJMh, srgb_100nits_odt);
 
-        out[0] = JMh[0];
-        out[1] = JMh[1];
-        out[2] = JMh[2];
-        out[3] = in[3];
+//         out[0] = JMh[0];
+//         out[1] = JMh[1];
+//         out[2] = JMh[2];
+//         out[3] = in[3];
 
-        in  += 4;
-        out += 4;
-    }
-}
+//         in  += 4;
+//         out += 4;
+//     }
+// }
 
-Renderer_ACES_RGB_TO_JMh_20::Renderer_ACES_RGB_TO_JMh_20(ConstFixedFunctionOpDataRcPtr & data)
-    :   OpCPU()
-{
-    m_fwd = FixedFunctionOpData::ACES_RGB_TO_JMh_20 == data->getStyle();
-}
+// Renderer_ACES_RGB_TO_JMh_20::Renderer_ACES_RGB_TO_JMh_20(ConstFixedFunctionOpDataRcPtr & data)
+//     :   OpCPU()
+// {
+//     m_fwd = FixedFunctionOpData::ACES_RGB_TO_JMh_20 == data->getStyle();
+// }
 
-void Renderer_ACES_RGB_TO_JMh_20::apply(const void * inImg, void * outImg, long numPixels) const
-{
-    if (m_fwd)
-    {
-        fwd(inImg, outImg, numPixels);
-    }
-    else
-    {
-        inv(inImg, outImg, numPixels);
-    }
-}
+// void Renderer_ACES_RGB_TO_JMh_20::apply(const void * inImg, void * outImg, long numPixels) const
+// {
+//     if (m_fwd)
+//     {
+//         fwd(inImg, outImg, numPixels);
+//     }
+//     else
+//     {
+//         inv(inImg, outImg, numPixels);
+//     }
+// }
 
-void Renderer_ACES_RGB_TO_JMh_20::fwd(const void * inImg, void * outImg, long numPixels) const
-{
-    using namespace ACES2CPUHelpers;
+// void Renderer_ACES_RGB_TO_JMh_20::fwd(const void * inImg, void * outImg, long numPixels) const
+// {
+//     using namespace ACES2;
 
-    const float * in = (const float *)inImg;
-    float * out = (float *)outImg;
+//     const float * in = (const float *)inImg;
+//     float * out = (float *)outImg;
 
-    for(long idx=0; idx<numPixels; ++idx)
-    {
-        const f3 RGB = {in[0], in[1], in[2]};
+//     for(long idx=0; idx<numPixels; ++idx)
+//     {
+//         const f3 RGB = {in[0], in[1], in[2]};
 
-        const f3 JMh = RGB_to_JMh(RGB, srgb_100nits_odt.LIMIT_RGB_TO_XYZ, srgb_100nits_odt.peakLuminance, srgb_100nits_odt.limitJMhParams);
+//         const f3 JMh = RGB_to_JMh(RGB, srgb_100nits_odt.LIMIT_RGB_TO_XYZ, srgb_100nits_odt.peakLuminance, srgb_100nits_odt.limitJMhParams);
 
-        out[0] = JMh[0];
-        out[1] = JMh[1];
-        out[2] = JMh[2];
-        out[3] = in[3];
+//         out[0] = JMh[0];
+//         out[1] = JMh[1];
+//         out[2] = JMh[2];
+//         out[3] = in[3];
 
-        in  += 4;
-        out += 4;
-    }
-}
+//         in  += 4;
+//         out += 4;
+//     }
+// }
 
-void Renderer_ACES_RGB_TO_JMh_20::inv(const void * inImg, void * outImg, long numPixels) const
-{
-    using namespace ACES2CPUHelpers;
+// void Renderer_ACES_RGB_TO_JMh_20::inv(const void * inImg, void * outImg, long numPixels) const
+// {
+//     using namespace ACES2;
 
-    const float * in = (const float *)inImg;
-    float * out = (float *)outImg;
+//     const float * in = (const float *)inImg;
+//     float * out = (float *)outImg;
 
-    for(long idx=0; idx<numPixels; ++idx)
-    {
-        const f3 JMh = {in[0], in[1], in[2]};
+//     for(long idx=0; idx<numPixels; ++idx)
+//     {
+//         const f3 JMh = {in[0], in[1], in[2]};
 
-        const f3 RGB = JMh_to_RGB(JMh, srgb_100nits_odt.LIMIT_XYZ_TO_RGB, srgb_100nits_odt.peakLuminance, srgb_100nits_odt.limitJMhParams);
+//         const f3 RGB = JMh_to_RGB(JMh, srgb_100nits_odt.LIMIT_XYZ_TO_RGB, srgb_100nits_odt.peakLuminance, srgb_100nits_odt.limitJMhParams);
 
-        out[0] = RGB[0];
-        out[1] = RGB[1];
-        out[2] = RGB[2];
-        out[3] = in[3];
+//         out[0] = RGB[0];
+//         out[1] = RGB[1];
+//         out[2] = RGB[2];
+//         out[3] = in[3];
 
-        in  += 4;
-        out += 4;
-    }
-}
+//         in  += 4;
+//         out += 4;
+//     }
+// }
 
 Renderer_REC2100_Surround::Renderer_REC2100_Surround(ConstFixedFunctionOpDataRcPtr & data)
     :   OpCPU()
@@ -1699,30 +1699,31 @@ ConstOpCPURcPtr GetFixedFunctionCPURenderer(ConstFixedFunctionOpDataRcPtr & func
             // Sharing same renderer (param will be inverted to handle direction).
             return std::make_shared<Renderer_ACES_OutputTransform20>(func);
         }
-        case FixedFunctionOpData::ACES_AP0_TO_JMh_20:
-        case FixedFunctionOpData::ACES_JMh_TO_AP0_20:
-        {
-            // Sharing same renderer (param will be inverted to handle direction).
-            return std::make_shared<Renderer_ACES_AP0_TO_JMh_20>(func);
-        }
-        case FixedFunctionOpData::ACES_TONESCALE_20_FWD:
-        case FixedFunctionOpData::ACES_TONESCALE_20_INV:
-        {
-            // Sharing same renderer (param will be inverted to handle direction).
-            return std::make_shared<Renderer_ACES_TONESCALE_20>(func);
-        }
-        case FixedFunctionOpData::ACES_GAMUT_MAP_20_FWD:
-        case FixedFunctionOpData::ACES_GAMUT_MAP_20_INV:
-        {
-            // Sharing same renderer (param will be inverted to handle direction).
-            return std::make_shared<Renderer_ACES_GAMUT_MAP_20>(func);
-        }
-        case FixedFunctionOpData::ACES_RGB_TO_JMh_20:
-        case FixedFunctionOpData::ACES_JMh_TO_RGB_20:
-        {
-            // Sharing same renderer (param will be inverted to handle direction).
-            return std::make_shared<Renderer_ACES_RGB_TO_JMh_20>(func);
-        }
+        // case FixedFunctionOpData::ACES_AP0_TO_JMh_20:
+        // case FixedFunctionOpData::ACES_JMh_TO_AP0_20:
+        // {
+        //     // Sharing same renderer (param will be inverted to handle direction).
+        //     return std::make_shared<Renderer_ACES_AP0_TO_JMh_20>(func);
+        // }
+        // case FixedFunctionOpData::ACES_TONESCALE_20_FWD:
+        // case FixedFunctionOpData::ACES_TONESCALE_20_INV:
+        // {
+        //     // Sharing same renderer (param will be inverted to handle direction).
+        //     return std::make_shared<Renderer_ACES_TONESCALE_20>(func);
+        // }
+        // case FixedFunctionOpData::ACES_GAMUT_MAP_20_FWD:
+        // case FixedFunctionOpData::ACES_GAMUT_MAP_20_INV:
+        // {
+        //     // Sharing same renderer (param will be inverted to handle direction).
+        //     return std::make_shared<Renderer_ACES_GAMUT_MAP_20>(func);
+        // }
+        // case FixedFunctionOpData::ACES_RGB_TO_JMh_20:
+        // case FixedFunctionOpData::ACES_JMh_TO_RGB_20:
+        // {
+        //     // Sharing same renderer (param will be inverted to handle direction).
+        //     return std::make_shared<Renderer_ACES_RGB_TO_JMh_20>(func);
+        // }
+
         case FixedFunctionOpData::REC2100_SURROUND_FWD:
         case FixedFunctionOpData::REC2100_SURROUND_INV:
         {

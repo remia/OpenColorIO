@@ -44,10 +44,10 @@ public:
         ACES_OUTPUT_TRANSFORM_20_INV,
 
         // TODO: Remove these styles, keeping them currently for easier per component tests
-        ACES_AP0_TO_JMh_20,
-        ACES_JMh_TO_AP0_20,
-        ACES_TONESCALE_20_FWD,
-        ACES_TONESCALE_20_INV,
+        ACES_LMS_TO_JMh_20,
+        ACES_JMh_TO_LMS_20,
+        ACES_TONESCALE_COMPRESS_20_FWD,
+        ACES_TONESCALE_COMPRESS_20_INV,
         ACES_GAMUT_MAP_20_FWD,
         ACES_GAMUT_MAP_20_INV,
         ACES_RGB_TO_JMh_20,

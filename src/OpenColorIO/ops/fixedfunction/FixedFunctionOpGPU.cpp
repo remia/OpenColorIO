@@ -6,6 +6,9 @@
 #include <OpenColorIO/OpenColorIO.h>
 
 #include "ops/fixedfunction/FixedFunctionOpGPU.h"
+// #include "ACES2/Common.h"
+// #include "ACES2/Init.h"
+// #include "ACES2/GPU.h"
 
 
 namespace OCIO_NAMESPACE
@@ -347,6 +350,51 @@ void Add_GamutComp_13_Inv_Shader(GpuShaderText & ss,
     );
 }
 
+// void Add_ACES_OutputTransform_20_Fwd_Shader(
+//     GpuShaderCreatorRcPtr & shaderCreator,
+//     GpuShaderText & ss,
+//     const FixedFunctionOpData::Params & params)
+// {
+//     const float peakLuminance = (float) params[0];
+
+//     const float lim_red_x   = (float) params[1];
+//     const float lim_red_y   = (float) params[2];
+//     const float lim_green_x = (float) params[3];
+//     const float lim_green_y = (float) params[4];
+//     const float lim_blue_x  = (float) params[5];
+//     const float lim_blue_y  = (float) params[6];
+//     const float lim_white_x = (float) params[7];
+//     const float lim_white_y = (float) params[8];
+
+//     const float enc_red_x   = (float) params[9];
+//     const float enc_red_y   = (float) params[10];
+//     const float enc_green_x = (float) params[11];
+//     const float enc_green_y = (float) params[12];
+//     const float enc_blue_x  = (float) params[13];
+//     const float enc_blue_y  = (float) params[14];
+//     const float enc_white_x = (float) params[15];
+//     const float enc_white_y = (float) params[16];
+
+//     const bool ap1_clamp = params[17] == 1.f;
+
+//     const Primaries limitingPrimaries = {
+//         {lim_red_x  , lim_red_y  },
+//         {lim_green_x, lim_green_y},
+//         {lim_blue_x , lim_blue_y },
+//         {lim_white_x, lim_white_y}
+//     };
+
+//     const Primaries encodingPrimaries = {
+//         {enc_red_x  , enc_red_y  },
+//         {enc_green_x, enc_green_y},
+//         {enc_blue_x , enc_blue_y },
+//         {enc_white_x, enc_white_y}
+//     };
+
+//     ACES2::OutputTransformParams ot_params = ACES2::get_transform_params(
+//         peakLuminance, limitingPrimaries, encodingPrimaries, ap1_clamp);
+// }
+
 void Add_Surround_10_Fwd_Shader(GpuShaderCreatorRcPtr & shaderCreator, GpuShaderText & ss, float gamma)
 {
     const std::string pxl(shaderCreator->getPixelName());
@@ -624,8 +672,14 @@ void GetFixedFunctionGPUShaderProgram(GpuShaderCreatorRcPtr & shaderCreator,
         }
 
         case FixedFunctionOpData::ACES_OUTPUT_TRANSFORM_20_FWD:
-            // Not implemented
+        {
+            // Add_ACES_OutputTransform_20_Fwd_Shader(
+            //     shaderCreator,
+            //     ss,
+            //     func->getParams()
+            // );
             break;
+        }
         case FixedFunctionOpData::ACES_OUTPUT_TRANSFORM_20_INV:
             // Not implemented
             break;

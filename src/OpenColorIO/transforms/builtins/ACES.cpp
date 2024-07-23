@@ -1114,6 +1114,42 @@ void RegisterAll(BuiltinTransformRegistryImpl & registry) noexcept
             CreateMatrixOp(ops, matrix, TRANSFORM_DIR_FORWARD);
         };
 
+        /*
+
+        // AP1 Clamp
+        MatrixOp - AP0 to AP1
+        RangeOp - 0 to Inf
+        MatrixOp - AP1 to XYZ
+
+        // RGB to JMh
+        MatrixOp - SCALE REF_LUM
+        MatrixOp - XYZ to CAM16PRI // Merge into the below for simplicity??
+        FixedFunctionOp (AP0 Primaries) - SCALE D_RGB + PANLRC + JMh (SSE)
+
+        // Tonemap and compress
+        FixedFunctionOp (AP0 Primaries, Peak Luminance) -
+            Tonemap - JtoY + Tonescale + YtoJ (SSE)
+            ChromaCompress - Sample MNorm & Limit + Compress/Expand
+        OR
+        FixedFunctionOp (Peak Luminance) -
+            CreateGradingRGBCurveOp - BSpline approxmation of the above
+            ChromaCompress - Sample MNorm & Limit + Compress/Expand
+            // Not possible to a FixedFunctionOp internally use another Op
+
+        // GamutMap
+        FixedFunctionOp (Limit Primaries) - Gamut mapper monolith
+
+        // JMh to RGB
+        FixedFunctionOpInv (Limit Primaries) - JMh (SSE) + SCALE D_RGB + PANLRC 
+
+        MatrixOp - Limit to Output
+        MatrixOp - Scaling white (optional)
+
+
+        This amounts to 3 new FixedFunctionOps but we loose possibility to create custom OTs.
+        Do we allow parameters for the BuiltinTransform?
+        */
+
         registry.addBuiltin("ACES-2-OUTPUT - ACES2065-1_to_CIE-XYZ-D65 - SDR-VIDEO-REC709D60lim",
                                 "Component of ACES 2 Output Transforms for SDR D65 video",
                                 ACES2065_1_to_CIE_XYZ_video_rec709lim_d60_2_0_Functor);

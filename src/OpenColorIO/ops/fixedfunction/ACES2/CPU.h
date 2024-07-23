@@ -133,6 +133,7 @@ constexpr float reachMFromTable(float h, const Table1D &gt)
 // Post adaptation non linear response compression
 constexpr float panlrc_forward(float v, float F_L)
 {
+    // Can we have negatives here?
     float F_L_v = pow(F_L * std::abs(v) / reference_luminance, 0.42f);
     float c = (400.f * std::copysign(1., v) * F_L_v) / (27.13f + F_L_v);
     return c;
