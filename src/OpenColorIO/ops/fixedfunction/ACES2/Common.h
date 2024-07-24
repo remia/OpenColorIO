@@ -4,6 +4,8 @@
 #ifndef INCLUDED_OCIO_ACES2TYPES_H
 #define INCLUDED_OCIO_ACES2TYPES_H
 
+#include <iomanip>
+
 #include "MatrixLib.h"
 #include "ColorLib.h"
 
@@ -46,6 +48,8 @@ struct JMhParams
     m33f panlrcm;
     m33f MATRIX_16;
     m33f MATRIX_16_INV;
+    m33f MATRIX_RGB_to_CAM16;
+    m33f MATRIX_CAM16_to_RGB;
 };
 
 struct ToneScaleParams
@@ -58,6 +62,29 @@ struct ToneScaleParams
     float s_2;
     float u_2;
     float m_2;
+};
+
+struct ChromaCompressParams
+{
+    float limit_J_max;
+    float model_gamma;
+    float sat;
+    float sat_thr;
+    float compr;
+    Table1D reach_m_table;
+    float chroma_compress_scale;
+    static constexpr float cusp_mid_blend = 1.3f;
+};
+
+struct GamutCompressParams
+{
+    float limit_J_max;
+    float mid_J;
+    float model_gamma;
+    float focus_dist;
+    Table1D reach_m_table;
+    Table3D gamut_cusp_table;
+    Table1D upper_hull_gamma_table;
 };
 
 struct OutputTransformParams
@@ -89,7 +116,7 @@ struct OutputTransformParams
     float focus_dist;
     Table3D reach_gamut_table;
     Table1D reach_m_table;
-    float chromaCompressScale;
+    float chroma_compress_scale;
 
     // Gamut Compression
     Table3D gamut_cusp_table;

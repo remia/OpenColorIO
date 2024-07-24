@@ -16,7 +16,7 @@ using f4 = std::array<float, 4>;
 using m33f = std::array<float, 9>;
 
 
-constexpr f3 clamp_f3(const f3 &f3, float clampMin, float clampMax)
+inline constexpr f3 clamp_f3(const f3 &f3, float clampMin, float clampMax)
 {
     return {
         std::max(std::min(f3[0], clampMax), clampMin),
@@ -25,12 +25,12 @@ constexpr f3 clamp_f3(const f3 &f3, float clampMin, float clampMax)
     };
 }
 
-constexpr f3 f3_from_f(float v)
+inline constexpr f3 f3_from_f(float v)
 {
     return f3 {v, v, v};
 }
 
-constexpr f3 add_f_f3(float v, const f3 &f3)
+inline constexpr f3 add_f_f3(float v, const f3 &f3)
 {
     return {
         v + f3[0],
@@ -39,7 +39,7 @@ constexpr f3 add_f_f3(float v, const f3 &f3)
     };
 }
 
-constexpr f3 mult_f_f3(float v, const f3 &f3)
+inline constexpr f3 mult_f_f3(float v, const f3 &f3)
 {
     return {
         v * f3[0],
@@ -48,7 +48,7 @@ constexpr f3 mult_f_f3(float v, const f3 &f3)
     };
 }
 
-constexpr f3 mult_f3_f33(const f3 &f3, const m33f &mat33)
+inline constexpr f3 mult_f3_f33(const f3 &f3, const m33f &mat33)
 {
     return {
         f3[0] * mat33[0] + f3[1] * mat33[1] + f3[2] * mat33[2],
@@ -57,7 +57,7 @@ constexpr f3 mult_f3_f33(const f3 &f3, const m33f &mat33)
     };
 }
 
-constexpr m33f mult_f33_f33(const m33f &a, const m33f &b)
+inline constexpr m33f mult_f33_f33(const m33f &a, const m33f &b)
 {
     return {
         a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
@@ -74,7 +74,7 @@ constexpr m33f mult_f33_f33(const m33f &a, const m33f &b)
     };
 }
 
-constexpr m33f scale_f33(const m33f &mat33, const f3 &scale)
+inline constexpr m33f scale_f33(const m33f &mat33, const f3 &scale)
 {
     return {
         mat33[0] * scale[0], mat33[3], mat33[6],
@@ -83,7 +83,7 @@ constexpr m33f scale_f33(const m33f &mat33, const f3 &scale)
     };
 }
 
-constexpr m33f transpose_f33(const m33f &mat33)
+inline constexpr m33f transpose_f33(const m33f &mat33)
 {
     return {
         mat33[0], mat33[3], mat33[6],
@@ -92,7 +92,7 @@ constexpr m33f transpose_f33(const m33f &mat33)
     };
 }
 
-m33f m33_from_ocio_matrix_array(const MatrixOpData::MatrixArray &array)
+inline m33f m33_from_ocio_matrix_array(const MatrixOpData::MatrixArray &array)
 {
     const auto& v = array.getValues();
     return {
@@ -102,7 +102,7 @@ m33f m33_from_ocio_matrix_array(const MatrixOpData::MatrixArray &array)
     };
 }
 
-m33f invert_f33(const m33f &mat33)
+inline m33f invert_f33(const m33f &mat33)
 {
     MatrixOpData::MatrixArray array;
     MatrixOpData::MatrixArray::Values & v = array.getValues();

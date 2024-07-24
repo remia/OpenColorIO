@@ -170,8 +170,8 @@ GLuint CompileShaderText(GLenum shaderType, const char * text)
 
         std::string err("OCIO Shader program compilation failed:\n");
         err += log;
-        // err += "\n";
-        // err += text;
+        err += "\n";
+        err += text;
 
         throw Exception(err.c_str());
     }

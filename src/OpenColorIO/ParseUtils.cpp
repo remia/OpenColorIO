@@ -359,11 +359,9 @@ const char * FixedFunctionStyleToString(FixedFunctionStyle style)
         case FIXED_FUNCTION_ACES_GLOW_10:             return "ACES_Glow10";
         case FIXED_FUNCTION_ACES_DARK_TO_DIM_10:      return "ACES_DarkToDim10";
         case FIXED_FUNCTION_ACES_GAMUT_COMP_13:       return "ACES_GamutComp13";
-        case FIXED_FUNCTION_ACES_OUTPUT_TRANSFORM_20: return "ACES_OutputTransform20";
-        case FIXED_FUNCTION_ACES_AP0_TO_JMH_20:       return "ACES2_AP0_TO_JMh";
-        case FIXED_FUNCTION_ACES_TONESCALE_20:        return "ACES2_Tonescale";
-        case FIXED_FUNCTION_ACES_GAMUTMAP_20:         return "ACES2_GamutMap";
         case FIXED_FUNCTION_ACES_RGB_TO_JMH_20:       return "ACES2_RGB_TO_JMh";
+        case FIXED_FUNCTION_ACES_TONESCALE_COMPRESS_20: return "ACES2_TonescaleCompress";
+        case FIXED_FUNCTION_ACES_GAMUT_COMPRESS_20:         return "ACES2_GamutCompress";
         case FIXED_FUNCTION_REC2100_SURROUND:         return "REC2100_Surround";
         case FIXED_FUNCTION_RGB_TO_HSV:               return "RGB_TO_HSV";
         case FIXED_FUNCTION_XYZ_TO_xyY:               return "XYZ_TO_xyY";
