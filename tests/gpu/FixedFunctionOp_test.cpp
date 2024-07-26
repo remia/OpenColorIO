@@ -418,7 +418,8 @@ OCIO_ADD_GPU_TEST(FixedFunction, style_aces_gamut_compress_fwd)
         59.32347917f, 12.70321289f, 332.15973493f, 1.0f,
         60.85709181f, 25.34647230f, 182.92574447f, 0.0f,
         34.07446518f, 47.99006933f, 268.73561646f, 0.0f,
-        60.629492471415f, 52.631022123103f, 180.79165077273f, 1.0f
+        60.629492471415f, 52.631022123103f, 180.79165077273f, 1.0f,
+        86.734843996433f, 1.888068396171f, 171.28421125602f, 1.0f
     };
     test.setCustomValues(values);
 
@@ -450,8 +451,8 @@ OCIO_ADD_GPU_TEST(FixedFunction, style_aces_gamut_compress_inv)
     };
     test.setCustomValues(values);
 
-    // TODO: Check GPU inversion and get better match?
-    test.setErrorThreshold(1e-3f);
+    // TODO: Improve inversion match?
+    test.setErrorThreshold(2e-4f);
 }
 
 // The next four tests run into a problem on some graphics cards where 0.0 * Inf = 0.0,

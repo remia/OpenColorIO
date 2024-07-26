@@ -1254,7 +1254,7 @@ f2 cusp_from_table(float h, const ACES2::Table3D &gt)
 float hue_dependent_upper_hull_gamma(float h, const ACES2::Table1D &gt)
 {
     const int i_lo = hue_position_in_uniform_table(h, gt.size) + gt.base_index;
-    const int i_hi = next_position_in_table(i_lo, gt.size) ;
+    const int i_hi = next_position_in_table(i_lo, gt.size);
 
     const float base_hue = i_lo - gt.base_index;
 

@@ -851,7 +851,7 @@ std::string _Add_Gamma_table(
         GpuShaderText::getSamplerName(name).c_str(),
         g.gamut_cusp_table.total_size,
         1,
-        GpuShaderCreator::TEXTURE_RGB_CHANNEL,
+        GpuShaderCreator::TEXTURE_RED_CHANNEL,
         dimensions,
         INTERP_NEAREST,
         &(g.upper_hull_gamma_table.table[0]));
@@ -889,13 +889,13 @@ std::string _Add_Gamma_table(
 
     if (dimensions == GpuShaderDesc::TEXTURE_1D)
     {
-        ss.newLine() << ss.floatDecl("lo") << " = " << ss.sampleTex1D(name, "(i_lo + 0.5f) / 360.f") << ".r;";
-        ss.newLine() << ss.floatDecl("hi") << " = " << ss.sampleTex1D(name, "(i_hi + 0.5f) / 360.f") << ".r;";
+        ss.newLine() << ss.floatDecl("lo") << " = " << ss.sampleTex1D(name, std::string("(i_lo + 0.5f) / ") + std::to_string(g.upper_hull_gamma_table.total_size)) << ".r;";
+        ss.newLine() << ss.floatDecl("hi") << " = " << ss.sampleTex1D(name, std::string("(i_hi + 0.5f) / ") + std::to_string(g.upper_hull_gamma_table.total_size)) << ".r;";
     }
     else
     {
-        ss.newLine() << ss.floatDecl("lo") << " = " << ss.sampleTex2D(name, "vec2((i_lo + 0.5f) / 360.f, 0.5f)") << ".r;";
-        ss.newLine() << ss.floatDecl("hi") << " = " << ss.sampleTex2D(name, "vec2((i_hi + 0.5f) / 360.f, 0.5f)") << ".r;";
+        ss.newLine() << ss.floatDecl("lo") << " = " << ss.sampleTex2D(name, std::string("vec2((i_lo + 0.5f) / ") + std::to_string(g.upper_hull_gamma_table.total_size) + std::string(", 0.5f)")) << ".r;";
+        ss.newLine() << ss.floatDecl("hi") << " = " << ss.sampleTex2D(name, std::string("vec2((i_hi + 0.5f) / ") + std::to_string(g.upper_hull_gamma_table.total_size) + std::string(", 0.5f)")) << ".r;";
     }
 
     ss.newLine() << ss.floatDecl("t") << " = hwrap - base_hue;";

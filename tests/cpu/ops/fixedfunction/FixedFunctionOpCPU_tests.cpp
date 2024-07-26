@@ -494,14 +494,15 @@ OCIO_ADD_TEST(FixedFunctionOpCPU, aces_tonescale_compress_20)
 
 OCIO_ADD_TEST(FixedFunctionOpCPU, aces_gamut_map_20)
 {
-    const unsigned num_samples = 5;
+    const unsigned num_samples = 6;
 
     float input_32f[num_samples*4] = {
         15.86298519f, 30.60572714f,   4.17316853f, 0.5f,
         59.32347917f, 12.70321289f, 332.15973493f, 1.0f,
         60.85709181f, 25.34647230f, 182.92574447f, 0.0f,
         34.07446518f, 47.99006933f, 268.73561646f, 0.0f,
-        60.629492471415f, 52.631022123103f, 180.79165077273f, 1.0f
+        60.629492471415f, 52.631022123103f, 180.79165077273f, 1.0f,
+        86.734843996433f, 1.888068396171f, 171.28421125602f, 1.0f
     };
 
     float input2_32f[num_samples * 4];
@@ -512,7 +513,8 @@ OCIO_ADD_TEST(FixedFunctionOpCPU, aces_gamut_map_20)
         59.32347917f, 12.70321289f, 332.15973493f, 1.0f,
         60.89667436f, 23.02176424f, 182.92574447f, 0.0f,
         34.33494992f, 32.32098704f, 268.73561646f, 0.0f,
-        60.992832055704f, 26.66339303119f, 180.79165077273f, 1.0f
+        60.992832055704f, 26.66339303119f, 180.79165077273f, 1.0f,
+        86.734843996433f, 1.888068396171f, 171.28421125602f, 1.0f
     };
 
     OCIO::FixedFunctionOpData::Params params = {

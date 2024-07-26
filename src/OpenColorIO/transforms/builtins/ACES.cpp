@@ -1051,41 +1051,6 @@ void RegisterAll(BuiltinTransformRegistryImpl & registry) noexcept
     // ACES 2 OUTPUT TRANSFORMS
     //
 
-    /*
-
-    // AP1 Clamp
-    MatrixOp - AP0 to AP1
-    RangeOp - 0 to Inf
-    MatrixOp - AP1 to XYZ
-
-    // RGB to JMh
-    MatrixOp - SCALE REF_LUM
-    FixedFunctionOp (AP0 Primaries) - Scale?? + XYZ to CAM16PRI + SCALE D_RGB + PANLRC + JMh (SSE)
-
-    // Tonemap and compress
-    FixedFunctionOp (AP0 Primaries, Peak Luminance) -
-        Tonemap - JtoY + Tonescale + YtoJ (SSE)
-        ChromaCompress - Sample MNorm & Limit + Compress/Expand
-    OR
-    FixedFunctionOp (Peak Luminance) -
-        CreateGradingRGBCurveOp - BSpline approxmation of the above
-        ChromaCompress - Sample MNorm & Limit + Compress/Expand
-        // Not possible to a FixedFunctionOp internally use another Op
-
-    // GamutMap
-    FixedFunctionOp (Limit Primaries) - Gamut mapper monolith
-
-    // JMh to RGB
-    FixedFunctionOpInv (Limit Primaries) - JMh (SSE) + SCALE D_RGB + PANLRC 
-
-    MatrixOp - Limit to Output
-    MatrixOp - Scaling white (optional)
-
-
-    This amounts to 3 new FixedFunctionOps but we loose possibility to create custom OTs.
-    Do we allow parameters for the BuiltinTransform?
-    */
-
     {
         auto ACES2065_1_to_CIE_XYZ_video_rec709lim_2_0_Functor = [](OpRcPtrVec & ops)
         {
@@ -1140,9 +1105,68 @@ void RegisterAll(BuiltinTransformRegistryImpl & registry) noexcept
             CreateMatrixOp(ops, matrixToXYZ, TRANSFORM_DIR_FORWARD);
         };
 
-        registry.addBuiltin("ACES-2-OUTPUT - ACES2065-1_to_CIE-XYZ-D65 - SDR-VIDEO-REC709lim-FF",
+        registry.addBuiltin("ACES-2-OUTPUT - ACES2065-1_to_CIE-XYZ-D65 - SDR-VIDEO-REC709lim",
                             "Component of ACES 2 Output Transforms for SDR D65 video",
                             ACES2065_1_to_CIE_XYZ_video_rec709lim_2_0_Functor);
+    }
+
+    {
+        auto ACES2065_1_to_CIE_XYZ_hdr_video_1000nits_p3lim_2_0_Functor = [](OpRcPtrVec & ops)
+        {
+            MatrixOpData::MatrixArrayPtr matrixToAP1
+                = build_conversion_matrix(ACES_AP0::primaries, ACES_AP1::primaries, ADAPTATION_NONE);
+            CreateMatrixOp(ops, matrixToAP1, TRANSFORM_DIR_FORWARD);
+
+            CreateRangeOp(ops,
+                        0., RangeOpData::EmptyValue(),
+                        0., RangeOpData::EmptyValue(),
+                        TRANSFORM_DIR_FORWARD);
+
+            CreateMatrixOp(ops, matrixToAP1, TRANSFORM_DIR_INVERSE);
+
+            const Primaries & InP = ACES_AP0::primaries;
+            CreateFixedFunctionOp(ops, FixedFunctionOpData::ACES_RGB_TO_JMh_20, {
+                InP.m_red.m_xy[0], InP.m_red.m_xy[1],
+                InP.m_grn.m_xy[0], InP.m_grn.m_xy[1],
+                InP.m_blu.m_xy[0], InP.m_blu.m_xy[1],
+                InP.m_wht.m_xy[0], InP.m_wht.m_xy[1],
+            });
+
+            const float peak_luminance = 1000.f;
+            CreateFixedFunctionOp(ops, FixedFunctionOpData::ACES_TONESCALE_COMPRESS_20_FWD, {
+                peak_luminance
+            });
+
+            const Primaries & LimP = P3_D65::primaries;
+            CreateFixedFunctionOp(ops, FixedFunctionOpData::ACES_GAMUT_COMPRESS_20_FWD, {
+                peak_luminance,
+                LimP.m_red.m_xy[0], LimP.m_red.m_xy[1],
+                LimP.m_grn.m_xy[0], LimP.m_grn.m_xy[1],
+                LimP.m_blu.m_xy[0], LimP.m_blu.m_xy[1],
+                LimP.m_wht.m_xy[0], LimP.m_wht.m_xy[1],
+            });
+
+            const Primaries & OutP = P3_D65::primaries;
+            CreateFixedFunctionOp(ops, FixedFunctionOpData::ACES_JMh_TO_RGB_20, {
+                OutP.m_red.m_xy[0], OutP.m_red.m_xy[1],
+                OutP.m_grn.m_xy[0], OutP.m_grn.m_xy[1],
+                OutP.m_blu.m_xy[0], OutP.m_blu.m_xy[1],
+                OutP.m_wht.m_xy[0], OutP.m_wht.m_xy[1],
+            });
+
+            CreateRangeOp(ops,
+                        0., RangeOpData::EmptyValue(),
+                        0., RangeOpData::EmptyValue(),
+                        TRANSFORM_DIR_FORWARD);
+
+            MatrixOpData::MatrixArrayPtr matrixToXYZ
+                = build_conversion_matrix_to_XYZ_D65(P3_D65::primaries, ADAPTATION_BRADFORD);
+            CreateMatrixOp(ops, matrixToXYZ, TRANSFORM_DIR_FORWARD);
+        };
+
+        registry.addBuiltin("ACES-2-OUTPUT - ACES2065-1_to_CIE-XYZ-D65 - HDR-VIDEO-1000nit-P3D65lim",
+                            "Component of ACES 2 Output Transforms for 1000 nit HDR D65 video",
+                            ACES2065_1_to_CIE_XYZ_hdr_video_1000nits_p3lim_2_0_Functor);
     }
 }
 
