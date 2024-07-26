@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright Contributors to the OpenColorIO Project.
 
-#ifndef INCLUDED_OCIO_ACES2TYPES_H
-#define INCLUDED_OCIO_ACES2TYPES_H
+#ifndef INCLUDED_OCIO_ACES2COMMON_H
+#define INCLUDED_OCIO_ACES2COMMON_H
 
 #include <iomanip>
 
@@ -85,58 +85,6 @@ struct GamutCompressParams
     Table1D reach_m_table;
     Table3D gamut_cusp_table;
     Table1D upper_hull_gamma_table;
-};
-
-struct OutputTransformParams
-{
-    bool clamp_ap1;
-
-    float peakLuminance;
-
-    m33f AP1_TO_XYZ;
-    m33f XYZ_TO_AP1;
-    m33f AP0_TO_AP1;
-
-    // Tonescale
-    float n_r;
-    float g;
-    float t_1;
-    float c_t;
-    float s_2;
-    float u_2;
-    float m_2;
-
-    // Chroma Compression
-    float limit_J_max;
-    float mid_J;
-    float model_gamma;
-    float sat;
-    float sat_thr;
-    float compr;
-    float focus_dist;
-    Table3D reach_gamut_table;
-    Table1D reach_m_table;
-    float chroma_compress_scale;
-
-    // Gamut Compression
-    Table3D gamut_cusp_table;
-    Table1D upper_hull_gamma_table;
-
-    // Input gamut
-    m33f INPUT_RGB_TO_XYZ;
-    m33f INPUT_XYZ_TO_RGB;
-    JMhParams inputJMhParams;
-
-    // Limiting gamut
-    m33f LIMIT_RGB_TO_XYZ;
-    m33f LIMIT_XYZ_TO_RGB;
-    JMhParams limitJMhParams;
-
-    // Output gamut
-    m33f OUTPUT_XYZ_TO_RGB;
-    m33f LIMIT_TO_OUTPUT;
-
-    float white_scale;
 };
 
 // CAM
