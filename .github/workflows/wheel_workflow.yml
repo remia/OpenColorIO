@@ -45,9 +45,9 @@ jobs:
     name: Build SDist
     runs-on: ubuntu-latest
     # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+    # if: |
+    #   github.event_name != 'schedule' ||
+    #   github.repository == 'AcademySoftwareFoundation/OpenColorIO'
 
     steps:
 
@@ -72,9 +72,9 @@ jobs:
     name: Build wheels on Linux
     runs-on: ubuntu-latest
     # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+    # if: |
+    #   github.event_name != 'schedule' ||
+    #   github.repository == 'AcademySoftwareFoundation/OpenColorIO'
     strategy:
       matrix:
         include:
@@ -194,9 +194,9 @@ jobs:
     name: Build wheels on macOS
     runs-on: macos-12
     # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+    # if: |
+    #   github.event_name != 'schedule' ||
+    #   github.repository == 'AcademySoftwareFoundation/OpenColorIO'
     strategy:
       matrix:
         include:
@@ -270,9 +270,9 @@ jobs:
     name: Build wheels on Windows
     runs-on: windows-2022
     # Don't run on OCIO forks
-    if: |
-      github.event_name != 'schedule' ||
-      github.repository == 'AcademySoftwareFoundation/OpenColorIO'
+    # if: |
+    #   github.event_name != 'schedule' ||
+    #   github.repository == 'AcademySoftwareFoundation/OpenColorIO'
     strategy:
       matrix:
         include:
