@@ -2,6 +2,7 @@
 // Copyright Contributors to the OpenColorIO Project.
 
 #include "Transform.h"
+#include "ops/lut1d/Lut1DOpData.h"
 
 
 namespace OCIO_NAMESPACE
@@ -46,8 +47,26 @@ int clamp_to_table_bounds(int entry, int table_size)
     return std::min(table_size - 1, std::max(0, entry));
 }
 
-f2 cusp_from_table(float h, const Table3D &gt)
+f2 cusp_from_table(float h, const Table3D &gt, const Table1DLookup &ht)
 {
+    h = SanitizeFloat(h);
+
+#ifdef NEW_CUSP_SAMPLING
+
+    float lut_h_min = ht.start;
+    float lut_h_max = ht.end;
+    float lut_h_range = lut_h_max - lut_h_min;
+    float lut_h = ((h / 360.f) - lut_h_min) / lut_h_range;
+    float f_lo = lut_h * (ht.total_size - 1);
+
+    int ii_lo = int(f_lo);
+    int ii_hi = ii_lo + 1;
+    float f = f_lo - int(f_lo);
+    int i_lo = int(lerp(ht.table[ii_lo], ht.table[ii_hi], f) * (gt.total_size - 1));
+    int i_hi = clamp_to_table_bounds(i_lo + 1, gt.total_size);
+
+#else
+
     int i_lo = 0;
     int i_hi = gt.base_index + gt.size; // allowed as we have an extra entry in the table
     int i = clamp_to_table_bounds(hue_position_in_uniform_table(h, gt.size) + gt.base_index, gt.total_size);
@@ -66,6 +85,8 @@ f2 cusp_from_table(float h, const Table3D &gt)
     }
 
     i_hi = std::max(1, i_hi);
+
+#endif
 
     const f3 lo {
         gt.table[i_hi-1][0],
@@ -424,6 +445,47 @@ Table3D make_gamut_table(const Primaries &P, float peakLuminance)
     return gamutCuspTable;
 }
 
+Table1DLookup make_gamut_table_lookup(const Table3D & gt)
+{
+    unsigned int lookup_size = gt.total_size;
+    float lut_start = gt.table[0][2];
+    float lut_end = gt.table[lookup_size-1][2];
+
+    Lut1DOpDataRcPtr lutData = std::make_shared<Lut1DOpData>(lookup_size);
+    Array::Values & vals = lutData->getArray().getValues();
+    for (unsigned int i = 0, p = 0; i < lookup_size; ++i)
+    {
+        for (int j = 0; j < 3; ++j, ++p)
+        {
+            vals[p] = (gt.table[i][2] - lut_start) / (lut_end - lut_start);
+        }
+    }
+
+    Table1DLookup gtl;
+    gtl.start = lut_start / 360.f;
+    gtl.end = lut_end / 360.f;
+
+    unsigned int inv_lookup_size = gtl.total_size;
+
+    auto invLut = lutData->inverse();
+    invLut->validate();
+    invLut->finalize();
+    ConstLut1DOpDataRcPtr constInvLut = invLut;
+    ConstLut1DOpDataRcPtr newDomainLut = std::make_shared<Lut1DOpData>(Lut1DOpData::LUT_STANDARD, inv_lookup_size, true);
+    ConstLut1DOpDataRcPtr fastInvLutData = Lut1DOpData::Compose(newDomainLut, constInvLut, Lut1DOpData::COMPOSE_RESAMPLE_NO);
+
+    auto & invLutArray = fastInvLutData->getArray().getValues();
+    for (unsigned int i = 0, p = 0; i < inv_lookup_size; ++i)
+    {
+        for (int j = 0; j < 3; ++j, ++p)
+        {
+            gtl.table[i] = invLutArray[p];
+        }
+    }
+
+    return gtl;
+}
+
 bool any_below_zero(const f3 &rgb)
 {
     return (rgb[0] < 0. || rgb[1] < 0. || rgb[2] < 0.);
@@ -649,7 +711,7 @@ f3 compressGamut(const f3 &JMh, float Jx, const ACES2::GamutCompressParams& p, b
     else
     {
         const f2 project_from = {J, M};
-        const f2 JMcusp = cusp_from_table(h, p.gamut_cusp_table);
+        const f2 JMcusp = cusp_from_table(h, p.gamut_cusp_table, p.gamut_cusp_index_table);
         const float focusJ = lerpf(JMcusp[0], p.mid_J, std::min(1.f, cusp_mid_blend - (JMcusp[0] / p.limit_J_max)));
         const float slope_gain = p.limit_J_max * p.focus_dist * get_focus_gain(Jx, JMcusp[0], p.limit_J_max);
 
@@ -689,7 +751,7 @@ f3 gamut_compress_fwd(const f3 &JMh, const GamutCompressParams &p)
 
 f3 gamut_compress_inv(const f3 &JMh, const GamutCompressParams &p)
 {
-    const f2 JMcusp = cusp_from_table(JMh[2], p.gamut_cusp_table);
+    const f2 JMcusp = cusp_from_table(JMh[2], p.gamut_cusp_table, p.gamut_cusp_index_table);
     float Jx = JMh[0];
 
     f3 unCompressedJMh;
@@ -741,6 +803,7 @@ bool evaluate_gamma_fit(
 
 Table1D make_upper_hull_gamma(
     const Table3D &gamutCuspTable,
+    const Table1DLookup &gamutCuspIndexTable,
     float peakLuminance,
     float limit_J_max,
     float mid_J,
@@ -759,7 +822,7 @@ Table1D make_upper_hull_gamma(
         gammaTable.table[i] = -1.f;
 
         const float hue = (float) i;
-        const f2 JMcusp = cusp_from_table(hue, gamutCuspTable);
+        const f2 JMcusp = cusp_from_table(hue, gamutCuspTable, gamutCuspIndexTable);
 
         f3 testJMh[test_count]{};
         for (int testIndex = 0; testIndex < test_count; testIndex++)
@@ -913,8 +976,11 @@ GamutCompressParams init_GamutCompressParams(float peakLuminance, const Primarie
     params.lower_hull_gamma = lower_hull_gamma;
     params.reach_m_table = make_reach_m_table(ACES_AP1::primaries, peakLuminance);
     params.gamut_cusp_table = make_gamut_table(limitingPrimaries, peakLuminance);
+    params.gamut_cusp_index_table = make_gamut_table_lookup(params.gamut_cusp_table);
+
     params.upper_hull_gamma_table = make_upper_hull_gamma(
         params.gamut_cusp_table,
+        params.gamut_cusp_index_table,
         peakLuminance,
         limit_J_max,
         mid_J,

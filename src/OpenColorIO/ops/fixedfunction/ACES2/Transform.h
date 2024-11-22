@@ -6,6 +6,8 @@
 
 #include "Common.h"
 
+#define NEW_CUSP_SAMPLING
+
 namespace OCIO_NAMESPACE
 {
 
