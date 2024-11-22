@@ -35,6 +35,17 @@ struct Table1D
     float table[TABLE_TOTAL_SIZE];
 };
 
+static constexpr int GAMUT_TABLE_IDX_SIZE = 360 * 5;
+struct Table1DLookup
+{
+    static constexpr int base_index = GAMUT_TABLE_BASE_INDEX;
+    static constexpr int size = GAMUT_TABLE_IDX_SIZE;
+    static constexpr int total_size = GAMUT_TABLE_IDX_SIZE + TABLE_ADDITION_ENTRIES;
+    float table[GAMUT_TABLE_IDX_SIZE + TABLE_ADDITION_ENTRIES];
+    float start;
+    float end;
+};
+
 struct JMhParams
 {
     float F_L;
@@ -79,6 +90,7 @@ struct GamutCompressParams
     float focus_dist;
     float lower_hull_gamma;
     Table1D reach_m_table;
+    Table1DLookup gamut_cusp_index_table;
     Table3D gamut_cusp_table;
     Table1D upper_hull_gamma_table;
 };

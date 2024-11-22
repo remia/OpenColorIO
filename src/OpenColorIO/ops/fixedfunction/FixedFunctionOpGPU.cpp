@@ -723,20 +723,98 @@ std::string _Add_Cusp_table(
         shaderCreator->addToDeclareShaderCode(ss.string().c_str());
     }
 
+#ifdef NEW_CUSP_SAMPLING
+
+    // Reserve name
+    std::ostringstream resNameIndex;
+    resNameIndex << shaderCreator->getResourcePrefix()
+            << std::string("_")
+            << std::string("gamut_cusp_table_hues_")
+            << resourceIndex;
+
+    // Note: Remove potentially problematic double underscores from GLSL resource names.
+    std::string nameIndex(resNameIndex.str());
+    StringUtils::ReplaceInPlace(nameIndex, "__", "_");
+
+    // Register texture
+    GpuShaderDesc::TextureDimensions dimensionsIndex = GpuShaderDesc::TEXTURE_1D;
+    if (shaderCreator->getLanguage() == GPU_LANGUAGE_GLSL_ES_1_0
+        || shaderCreator->getLanguage() == GPU_LANGUAGE_GLSL_ES_3_0
+        || !shaderCreator->getAllowTexture1D())
+    {
+        dimensionsIndex = GpuShaderDesc::TEXTURE_2D;
+    }
+
+    shaderCreator->addTexture(
+        nameIndex.c_str(),
+        GpuShaderText::getSamplerName(nameIndex).c_str(),
+        g.gamut_cusp_index_table.total_size,
+        1,
+        GpuShaderCreator::TEXTURE_RED_CHANNEL,
+        dimensionsIndex,
+        INTERP_NEAREST,
+        &(g.gamut_cusp_index_table.table[0]));
+
+    if (dimensionsIndex == GpuShaderDesc::TEXTURE_1D)
+    {
+        GpuShaderText ss(shaderCreator->getLanguage());
+        ss.declareTex1D(nameIndex);
+        shaderCreator->addToDeclareShaderCode(ss.string().c_str());
+    }
+    else
+    {
+        GpuShaderText ss(shaderCreator->getLanguage());
+        ss.declareTex2D(nameIndex);
+        shaderCreator->addToDeclareShaderCode(ss.string().c_str());
+    }
+
+#endif
+
     // Sampler function
     GpuShaderText ss(shaderCreator->getLanguage());
 
+#ifndef NEW_CUSP_SAMPLING
     const std::string hues_array_name = name + "_hues_array";
+
     std::vector<float> hues_array(g.gamut_cusp_table.total_size);
     for (int i = 0; i < g.gamut_cusp_table.total_size; ++i)
     {
         hues_array[i] = g.gamut_cusp_table.table[i][2];
     }
     ss.declareFloatArrayConst(hues_array_name, (int) hues_array.size(), hues_array.data());
+#endif
 
     ss.newLine() << ss.float2Keyword() << " " << name << "_sample(float h)";
     ss.newLine() << "{";
     ss.indent();
+
+#ifdef NEW_CUSP_SAMPLING
+
+    ss.newLine() << ss.floatDecl("lut_h_min") << " = " << g.gamut_cusp_index_table.start << ";";
+    ss.newLine() << ss.floatDecl("lut_h_max") << " = " << g.gamut_cusp_index_table.end << ";";
+    ss.newLine() << ss.floatDecl("lut_h_range") << " = lut_h_max - lut_h_min;";
+    ss.newLine() << ss.floatDecl("lut_h") << " = ((h / 360.0) - lut_h_min) / lut_h_range;";
+    ss.newLine() << ss.floatDecl("f_lo") << " = lut_h * (" << (g.gamut_cusp_index_table.total_size - 1) << ");";
+
+    ss.newLine() << ss.intDecl("ii_lo") << " = " << ss.intKeyword() << "(f_lo);";
+    ss.newLine() << ss.intDecl("ii_hi") << " = ii_lo + 1;";
+    ss.newLine() << ss.floatDecl("f") << " = f_lo - " << ss.intKeyword() << "(f_lo);";
+
+    if (dimensionsIndex == GpuShaderDesc::TEXTURE_1D)
+    {
+        ss.newLine() << ss.floatDecl("loo") << " = " << ss.sampleTex1D(nameIndex, std::string("(ii_lo + 0.5) / ") + std::to_string(g.gamut_cusp_index_table.total_size)) << ".r;";
+        ss.newLine() << ss.floatDecl("hii") << " = " << ss.sampleTex1D(nameIndex, std::string("(ii_hi + 0.5) / ") + std::to_string(g.gamut_cusp_index_table.total_size)) << ".r;";
+    }
+    else
+    {
+        ss.newLine() << ss.floatDecl("loo") << " = " << ss.sampleTex2D(nameIndex, ss.float2Const(std::string("(ii_lo + 0.5) / ") + std::to_string(g.gamut_cusp_index_table.total_size), "0.5")) << ".r;";
+        ss.newLine() << ss.floatDecl("hii") << " = " << ss.sampleTex2D(nameIndex, ss.float2Const(std::string("(ii_hi + 0.5) / ") + std::to_string(g.gamut_cusp_index_table.total_size), "0.5")) << ".r;";
+    }
+
+    ss.newLine() << ss.intDecl("i_lo") << " = " << ss.intKeyword() << "(" << ss.lerp("loo", "hii", "f") << " * (" << g.gamut_cusp_table.total_size - 1 << "));";
+    ss.newLine() << ss.intDecl("i_hi") << " = i_lo + 1;";
+
+#else
 
     ss.newLine() << ss.floatDecl("i_lo") << " = 0;";
     ss.newLine() << ss.floatDecl("i_hi") << " = " << g.gamut_cusp_table.base_index + g.gamut_cusp_table.size << ";";
@@ -768,6 +846,8 @@ std::string _Add_Cusp_table(
 
     ss.dedent();
     ss.newLine() << "}";
+
+#endif
 
     if (dimensions == GpuShaderDesc::TEXTURE_1D)
     {
