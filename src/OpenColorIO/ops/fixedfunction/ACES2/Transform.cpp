@@ -62,7 +62,7 @@ f2 cusp_from_table(float h, const Table3D &gt, const Table1DLookup &ht)
     int ii_lo = int(f_lo);
     int ii_hi = ii_lo + 1;
     float f = f_lo - int(f_lo);
-    int i_lo = int(lerp(ht.table[ii_lo], ht.table[ii_hi], f) * (gt.total_size - 1));
+    int i_lo = int(lerpf(ht.table[ii_lo], ht.table[ii_hi], f) * (gt.total_size - 1));
     int i_hi = clamp_to_table_bounds(i_lo + 1, gt.total_size);
 
 #else
