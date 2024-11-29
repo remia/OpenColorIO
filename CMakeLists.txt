@@ -170,6 +170,7 @@ option(OCIO_WARNING_AS_ERROR "Set build error level for CI testing" OFF)
 
 if (NOT WIN32)
     option(OCIO_ENABLE_SANITIZER "Specify whether to enable compiler sanitizers (address)" OFF)
+    option(OCIO_ENABLE_GPROF "Enable GProf" OFF)
 endif()
 
 

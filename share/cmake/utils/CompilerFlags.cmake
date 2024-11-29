@@ -114,6 +114,11 @@ if(USE_GCC OR USE_CLANG)
         set(PLATFORM_LINK_OPTIONS "${PLATFORM_LINK_OPTIONS};-fsanitize=address;-fsanitize=undefined")
     endif()
 
+    if(OCIO_ENABLE_GPROF)
+        set(PLATFORM_COMPILE_OPTIONS "${PLATFORM_COMPILE_OPTIONS};-fno-omit-frame-pointer;-g")
+        set(PLATFORM_LINK_OPTIONS "${PLATFORM_LINK_OPTIONS};-lprofiler;-g")
+    endif()
+
 endif()
 
 # An advanced variable will not be displayed in any of the cmake GUIs

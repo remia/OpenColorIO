@@ -96,7 +96,7 @@ public:
     void createGLBuffers();
 
     // Set the shader code.
-    virtual void setShader(GpuShaderDescRcPtr & shaderDesc);
+    virtual void setShader(GpuShaderDescRcPtr & shaderDesc, const std::string &override_fs = "");
 
     // Update the size of the buffer of the OpenGL viewport that will be used to process the image
     // (it does not modify the UI).  To be called at least one time. Use image size if we want to
@@ -107,6 +107,7 @@ public:
 
     // Process the image.
     void virtual redisplay();
+    void virtual redisplay_noswap() {};
 
     // Read the image from the rendering buffer. It is not meant to be used by interactive
     // applications used to display the image.
@@ -119,7 +120,6 @@ public:
     // OCIO_HEADLESS_ENABLED preprocessor.
     static OglAppRcPtr CreateOglApp(const char * winTitle, int winWidth, int winHeight);
 
-protected:
     // Window or output image size (set using reshape).
     // When the app is used to process an image this should be equal to the image size so that
     // when processed image is read from the viewport it matches the size of the original image.
@@ -128,6 +128,7 @@ protected:
     int m_viewportWidth{ 0 };
     int m_viewportHeight{ 0 };
 
+protected:
     // Initialize the OpenGL engine, and set up GLEW if needed.
     void setupCommon();
     
@@ -167,6 +168,7 @@ public:
     ~ScreenApp();
 
     void redisplay() override;
+    void redisplay_noswap() override;
     void printGLInfo() const noexcept override;
 
 private:
@@ -188,7 +190,7 @@ public:
     ~HeadlessApp();
 
     void printGLInfo() const noexcept override;
-    void redisplay() override;
+    void redisplay(bool) override;
 
 protected:
     // Helper function to print EGL info.

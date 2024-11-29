@@ -37,6 +37,12 @@ namespace OCIO = OCIO_NAMESPACE;
 #include "oglapp.h"
 #include "imageio.h"
 
+#define OPENGL_QUERY
+#define PRINT_TIMING
+
+// #define HARDCODED_SHADER
+// constexpr auto SHADER_PATH = "/user_data/RND/dev/OpenColorIO/aces2-test2.glsl";
+
 bool g_verbose   = false;
 bool g_gpulegacy = false;
 bool g_gpuinfo   = false;
@@ -174,11 +180,77 @@ void InitOCIO(const char * filename)
     }
 }
 
+#ifdef OPENGL_QUERY
+
+    // two query buffers: front and back
+    #define QUERY_BUFFERS 2
+    // the number of required queries
+    // in this example there is only one query per frame
+    #define QUERY_COUNT 1
+    // the array to store the two sets of queries.
+    unsigned int queryID[QUERY_BUFFERS][QUERY_COUNT];
+    unsigned int queryBackBuffer = 0, queryFrontBuffer = 1;
+
+    // call this function when initializating the OpenGL settings
+    void genQueries()
+    {
+        glGenQueries(QUERY_COUNT, queryID[queryBackBuffer]);
+        glGenQueries(QUERY_COUNT, queryID[queryFrontBuffer]);
+
+        // dummy query to prevent OpenGL errors from popping out
+        // for the first frame, the previous (front buffer) query
+        // would otherwise be empty
+        glBeginQuery(GL_TIME_ELAPSED, queryID[queryFrontBuffer][0]);
+        glEndQuery(GL_TIME_ELAPSED);
+    }
+
+    void swapQueryBuffers()
+    {
+        if (queryBackBuffer) {
+            queryBackBuffer = 0;
+            queryFrontBuffer = 1;
+        }
+        else {
+            queryBackBuffer = 1;
+            queryFrontBuffer = 0;
+        }
+    }
+
+#endif
+
 void Redisplay(void)
 {
     if (g_oglApp)
     {
-        g_oglApp->redisplay();
+
+#ifdef OPENGL_QUERY
+        glBeginQuery(GL_TIME_ELAPSED, queryID[queryBackBuffer][0]);
+#endif
+
+        g_oglApp->redisplay_noswap();
+
+#ifdef OPENGL_QUERY
+        glEndQuery(GL_TIME_ELAPSED);
+#endif
+
+        glutSwapBuffers();
+
+#ifdef OPENGL_QUERY
+        GLuint64 elapsed_time;
+        glGetQueryObjectui64v(
+            queryID[queryFrontBuffer][0],
+            GL_QUERY_RESULT, &elapsed_time);
+        swapQueryBuffers();
+
+#ifdef PRINT_TIMING
+        std::cerr << "elapsed_time: " << elapsed_time / 1e6 << "ms"
+                  << " for viewport: " << g_oglApp->m_viewportWidth << "x" << g_oglApp->m_viewportHeight
+                  << "\n";
+#endif
+
+#endif
+
+        glutPostRedisplay();
     }
 }
 
@@ -404,7 +476,27 @@ void UpdateOCIOGLState()
                       : processor->getOptimizedGPUProcessor(g_optimization);
     gpu->extractGpuShaderInfo(shaderDesc);
 
+#ifdef HARDCODED_SHADER
+
+    std::ifstream fileStream(SHADER_PATH);
+    if( !fileStream.is_open() )
+        std::cout << "Could not open : " << SHADER_PATH << std::endl;
+
+    std::string str((std::istreambuf_iterator<char>(fileStream)),
+            std::istreambuf_iterator<char>());
+    fileStream.close();
+
+    std::ostringstream oss;
+    oss << str;
+    oss << "\n\n";
+
+    g_oglApp->setShader(shaderDesc, oss.str());
+
+#else
+
     g_oglApp->setShader(shaderDesc);
+
+#endif
 }
 
 void menuCallback(int /*id*/)
@@ -665,6 +757,10 @@ int main(int argc, char **argv)
 
     g_oglApp->setYMirror();
     g_oglApp->setPrintShader(g_gpuinfo);
+
+#ifdef OPENGL_QUERY
+    genQueries();
+#endif
 
     glutReshapeFunc(Reshape);
     glutKeyboardFunc(Key);
