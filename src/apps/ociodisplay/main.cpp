@@ -18,7 +18,7 @@
 namespace OCIO = OCIO_NAMESPACE;
 
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
+#include <OpenGL/gl3.h>
 #include <OpenGL/glext.h>
 #include <GLUT/glut.h>
 #elif _WIN32
@@ -40,8 +40,11 @@ namespace OCIO = OCIO_NAMESPACE;
 #define OPENGL_QUERY
 #define PRINT_TIMING
 
-// #define HARDCODED_SHADER
-// constexpr auto SHADER_PATH = "/user_data/RND/dev/OpenColorIO/aces2-test2.glsl";
+#define HARDCODED_SHADER
+// Extract current shader (without binary search)
+// Measure time to do nothing (return in pixel)
+// Measure time to apply 1 and 10 times the DRT
+constexpr auto SHADER_PATH = "/Users/remi/ColorCode/OpenColorIO/experiments/aces2.glsl";
 
 bool g_verbose   = false;
 bool g_gpulegacy = false;

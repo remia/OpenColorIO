@@ -7,6 +7,7 @@
 #include "Common.h"
 
 #define NEW_CUSP_SAMPLING
+// #define TONESCALE_LUT
 
 namespace OCIO_NAMESPACE
 {
