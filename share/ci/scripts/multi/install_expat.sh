@@ -38,7 +38,10 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DEXPAT_BUILD_DOCS=OFF \
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
       ../expat/.
-cmake --build . \
+
+# Expat 2.7.2 yield a permission error on mac OS.
+# "file cannot create directory: /usr/local/include.  Maybe need administrative privileges."
+sudo cmake --build . \
       --target install \
       --config Release \
       --parallel 2
