@@ -189,8 +189,9 @@ jobs:
         run: share/ci/scripts/macos/install_tests_env.sh
       - name: Setup ext environment
         run: |
-          EXT_PATH=/usr/local
+          EXT_PATH=$GITHUB_WORKSPACE/_ext
           echo "EXT_PATH=$EXT_PATH" >> $GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$EXT_PATH" >> $GITHUB_ENV
       - name: Install fixed ext package versions
         # Minizip-ng depends on ZLIB. ZLIB must be installed first.
         run: |
@@ -240,6 +241,7 @@ jobs:
                 -DCMAKE_BUILD_TYPE=Release
           cmake --build . \
                 --config Release
+          export DYLD_LIBRARY_PATH=$EXT_PATH/lib:$DYLD_LIBRARY_PATH
           ./consumer
         working-directory: _build/tests/cmake-consumer-dist
 

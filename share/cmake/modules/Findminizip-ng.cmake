@@ -115,7 +115,6 @@ if(NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL ALL)
             PATH_SUFFIXES
                 include
                 include/minizip-ng
-                include/minizip-ng/minizip-ng
                 include/minizip
                 minizip-ng/include
                 minizip/include

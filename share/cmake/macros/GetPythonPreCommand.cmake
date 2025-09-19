@@ -66,9 +66,7 @@ macro(get_python_pre_command)
         # on Windows with:
         #   '> set PYTHONPATH=XXX \n call CMD'
         # '\n' is here because '\\&' does not work.
-        set(Python_PRE_CMD set ${_PATH_SET} "\n" call)
-
-        message(STATUS "Python pre-command: ${Python_PRE_CMD}")
+        set(Python_PRE_CMD set ${_PATH_SET} "\n" set ${_PYTHONPATH_SET} "\n" call)
 
     else()
         # Build path list
@@ -83,8 +81,6 @@ macro(get_python_pre_command)
 
         string(JOIN  ":" _PYTHONPATH_VALUE ${_PATHS})
         set(Python_PRE_CMD "PYTHONPATH=${_PYTHONPATH_VALUE}")
-
-        message(STATUS "Python pre-command: ${Python_PRE_CMD}")
 
     endif()
 

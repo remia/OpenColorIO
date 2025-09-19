@@ -26,18 +26,10 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DBUILD_SHARED_LIBS=ON \
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
       ../.
-
-if [[ $OSTYPE == 'darwin'* ]]; then
-sudo cmake --build . \
-      --target install \
-      --config Release \
-      --parallel 2
-else # not macOS
 cmake --build . \
       --target install \
       --config Release \
       --parallel 2
-fi
 
 cd ../..
 rm -rf Little-CMS

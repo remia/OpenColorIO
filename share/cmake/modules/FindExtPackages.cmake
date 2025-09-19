@@ -55,7 +55,7 @@ message(STATUS "Checking for mandatory dependencies...")
 # expat
 # https://github.com/libexpat/libexpat
 ocio_handle_dependency(  expat REQUIRED ALLOW_INSTALL
-                         MIN_VERSION 2.4.1           # 2.6.0 maybe? As it's cmake 4.0 friendly
+                         MIN_VERSION 2.6.0
                          RECOMMENDED_VERSION 2.7.2
                          RECOMMENDED_VERSION_REASON "CVE fixes and Latest version tested with OCIO")
 
@@ -73,7 +73,7 @@ ocio_handle_dependency(  pystring REQUIRED ALLOW_INSTALL
                          RECOMMENDED_VERSION 1.1.4
                          RECOMMENDED_VERSION_REASON "Latest version tested with OCIO")
 
-# Imath (>=3.1.1)
+# Imath
 # https://github.com/AcademySoftwareFoundation/Imath
 ocio_handle_dependency(  Imath REQUIRED ALLOW_INSTALL
                          MIN_VERSION 3.1.1
@@ -108,7 +108,7 @@ ocio_handle_dependency(  ZLIB REQUIRED ALLOW_INSTALL
 # minizip-ng
 # https://github.com/zlib-ng/minizip-ng
 ocio_handle_dependency(  minizip-ng REQUIRED ALLOW_INSTALL
-                         MIN_VERSION 3.0.8
+                         MIN_VERSION 4.0.0
                          RECOMMENDED_VERSION 4.0.10
                          RECOMMENDED_VERSION_REASON "Latest version tested with OCIO")
 
@@ -255,7 +255,7 @@ if(OCIO_BUILD_APPS)
         ###############################################################################
         # Calling find_package in CONFIG mode using PREFER_CONFIG option.
         ocio_handle_dependency(  OpenEXR PREFER_CONFIG ALLOW_INSTALL
-                                 MIN_VERSION 3.1.6
+                                 MIN_VERSION 3.2.0
                                  RECOMMENDED_VERSION 3.3.5
                                  RECOMMENDED_VERSION_REASON "Latest version tested with OCIO"
                                  PROMOTE_TARGET OpenEXR::OpenEXR)

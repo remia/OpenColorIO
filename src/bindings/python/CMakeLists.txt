@@ -22,7 +22,7 @@ if(OCIO_BUILD_DOCS)
 	# Run docstring extraction if docstrings.h is behind doxygen XML
 	add_custom_command(OUTPUT ${PYOCIO_DOCSTRINGS_H}
 		COMMAND
-			${Python_PRE_CMD} "${Python_EXECUTABLE}" -v "${EXTRACT_DOCSTRINGS_PY}" xml docstrings.h
+			${Python_PRE_CMD} "${Python_EXECUTABLE}" "${EXTRACT_DOCSTRINGS_PY}" xml docstrings.h
 		WORKING_DIRECTORY
 			${PYOCIO_DOCSTRINGS_DIR}
 		DEPENDS
