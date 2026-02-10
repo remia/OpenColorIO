@@ -7,6 +7,7 @@
 
 #include <OpenColorIO/OpenColorIO.h>
 
+#include "transforms/FileTransform.h"
 #include "ops/lut1d/Lut1DOpData.h"
 #include "ops/lut3d/Lut3DOpData.h"
 
@@ -14,11 +15,13 @@ namespace OCIO_NAMESPACE
 {
 Lut1DOpDataRcPtr HandleLUT1D(const Lut1DOpDataRcPtr & fileLut1D,
                              Interpolation fileInterp,
-                             bool & fileInterpUsed);
+                             bool & fileInterpUsed,
+                             const CachedFileRcPtr & cachedFile);
 
 Lut3DOpDataRcPtr HandleLUT3D(const Lut3DOpDataRcPtr & fileLut3D,
                              Interpolation fileInterp,
-                             bool & fileInterpUsed);
+                             bool & fileInterpUsed,
+                             const CachedFileRcPtr & cachedFile);
 
 void LogWarningInterpolationNotUsed(Interpolation interp, const FileTransform & fileTransform);
 } // OCIO_NAMESPACE

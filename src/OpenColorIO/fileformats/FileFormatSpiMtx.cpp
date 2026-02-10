@@ -157,7 +157,7 @@ void LocalFileFormat::buildFileOps(OpRcPtrVec & ops,
 
     const auto newDir = CombineTransformDirections(dir, fileTransform.getDirection());
 
-    CreateMatrixOffsetOp(ops, cachedFile->m44, cachedFile->offset4, newDir);
+    CreateMatrixOffsetOp(ops, cachedFile->m44, cachedFile->offset4, newDir, cachedFile->getFilepath());
 }
 }
 
@@ -167,4 +167,3 @@ FileFormat * CreateFileFormatSpiMtx()
 }
 
 } // namespace OCIO_NAMESPACE
-

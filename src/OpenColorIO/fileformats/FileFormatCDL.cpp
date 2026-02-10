@@ -239,6 +239,8 @@ LocalFileFormat::buildFileOps(OpRcPtrVec & ops,
 
         success = true;
         BuildCDLOp(ops, config, *cdl, newDir);
+
+        // TODO: Inject src attribute here?
     }
     
     // Try to parse the cccid as an integer index

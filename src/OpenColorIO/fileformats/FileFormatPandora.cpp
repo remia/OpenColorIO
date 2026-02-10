@@ -294,7 +294,7 @@ LocalFileFormat::buildFileOps(OpRcPtrVec & ops,
     const auto fileInterp = fileTransform.getInterpolation();
 
     bool fileInterpUsed = false;
-    auto lut3D = HandleLUT3D(cachedFile->lut3D, fileInterp, fileInterpUsed);
+    auto lut3D = HandleLUT3D(cachedFile->lut3D, fileInterp, fileInterpUsed, untypedCachedFile);
 
     if (!fileInterpUsed)
     {
@@ -311,4 +311,3 @@ FileFormat * CreateFileFormatPandora()
 }
 
 } // namespace OCIO_NAMESPACE
-

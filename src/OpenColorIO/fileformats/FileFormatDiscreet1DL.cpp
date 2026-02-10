@@ -755,7 +755,7 @@ LocalFileFormat::buildFileOps(OpRcPtrVec & ops,
     const auto fileInterp = fileTransform.getInterpolation();
 
     bool fileInterpUsed = false;
-    auto lut1D = HandleLUT1D(cachedFile->lut1D, fileInterp, fileInterpUsed);
+    auto lut1D = HandleLUT1D(cachedFile->lut1D, fileInterp, fileInterpUsed, untypedCachedFile);
 
     if (!fileInterpUsed)
     {

@@ -785,7 +785,7 @@ LocalFileFormat::buildFileOps(OpRcPtrVec & ops,
     if (cachedFile->lut)
     {
         bool fileInterpUsed = false;
-        lut = HandleLUT1D(cachedFile->lut, fileInterp, fileInterpUsed);
+        lut = HandleLUT1D(cachedFile->lut, fileInterp, fileInterpUsed, untypedCachedFile);
 
         if (!fileInterpUsed)
         {

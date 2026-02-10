@@ -14,7 +14,8 @@ namespace OCIO_NAMESPACE
 template<class Lut>
 OCIO_SHARED_PTR<Lut> HandleLUT(const OCIO_SHARED_PTR<Lut> & fileLut,
                                Interpolation fileInterp,
-                               bool & fileInterpUsed)
+                               bool & fileInterpUsed,
+                               const CachedFileRcPtr & cachedFile)
 {
     OCIO_SHARED_PTR<Lut> lut;
     if (fileLut)
@@ -37,22 +38,31 @@ OCIO_SHARED_PTR<Lut> HandleLUT(const OCIO_SHARED_PTR<Lut> & fileLut,
             lut = fileLut->clone();
             lut->setInterpolation(fileInterp);
         }
+
+        if (cachedFile && !cachedFile->getFilepath().empty())
+        {
+            auto formatMetadata = fileLut->getFormatMetadata();
+            formatMetadata.addAttribute("src", cachedFile->getFilepath().c_str());
+            fileLut->getFormatMetadata() = formatMetadata;
+        }
     }
     return lut;
 }
 
 Lut1DOpDataRcPtr HandleLUT1D(const Lut1DOpDataRcPtr & fileLut1D,
                              Interpolation fileInterp,
-                             bool & fileInterpUsed)
+                             bool & fileInterpUsed,
+                             const CachedFileRcPtr & cachedFile)
 {
-    return HandleLUT<Lut1DOpData>(fileLut1D, fileInterp, fileInterpUsed);
+    return HandleLUT<Lut1DOpData>(fileLut1D, fileInterp, fileInterpUsed, cachedFile);
 }
 
 Lut3DOpDataRcPtr HandleLUT3D(const Lut3DOpDataRcPtr & fileLut3D,
                              Interpolation fileInterp,
-                             bool & fileInterpUsed)
+                             bool & fileInterpUsed,
+                             const CachedFileRcPtr & cachedFile)
 {
-    return HandleLUT<Lut3DOpData>(fileLut3D, fileInterp, fileInterpUsed);
+    return HandleLUT<Lut3DOpData>(fileLut3D, fileInterp, fileInterpUsed, cachedFile);
 }
 
 void LogWarningInterpolationNotUsed(Interpolation interp, const FileTransform & fileTransform)

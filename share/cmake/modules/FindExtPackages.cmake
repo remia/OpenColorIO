@@ -101,7 +101,7 @@ ocio_handle_dependency(  Imath REQUIRED ALLOW_INSTALL
 # See https://nvd.nist.gov/vuln/detail/CVE-2022-37434
 # See https://github.com/madler/zlib/releases/tag/v1.2.13
 ocio_handle_dependency(  ZLIB REQUIRED ALLOW_INSTALL
-                         MIN_VERSION 1.2.13         # CVE fixes
+                         MIN_VERSION 1.2.12         # CVE fixes
                          RECOMMENDED_VERSION 1.3.1
                          RECOMMENDED_VERSION_REASON "Latest version tested with OCIO"
                          VERSION_VARS ZLIB_VERSION_STRING ZLIB_VERSION )

@@ -645,6 +645,7 @@ void LoadFileUncached(FileFormat * & returnFormat,
             }
 
             CachedFileRcPtr cachedFile = tryFormat->read(*pStream, filepath, interp);
+            cachedFile->setFilepath(filepath);
 
             if(IsDebugLoggingEnabled())
             {
@@ -715,6 +716,7 @@ void LoadFileUncached(FileFormat * & returnFormat,
             }
 
             cachedFile = altFormat->read(*pStream, filepath, interp);
+            cachedFile->setFilepath(filepath);
 
             if(IsDebugLoggingEnabled())
             {

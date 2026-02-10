@@ -30,6 +30,19 @@ public:
     {
         throw Exception("Not a CDL file format.");
     }
+
+    void setFilepath(const std::string& filepath)
+    {
+        m_filepath = filepath;
+    }
+
+    const std::string& getFilepath() const
+    {
+        return m_filepath;
+    }
+
+private:
+    std::string m_filepath;
 };
 
 typedef OCIO_SHARED_PTR<CachedFile> CachedFileRcPtr;

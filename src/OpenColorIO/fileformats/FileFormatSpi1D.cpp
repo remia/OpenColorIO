@@ -414,7 +414,7 @@ void LocalFileFormat::buildFileOps(OpRcPtrVec & ops,
     const auto fileInterp = fileTransform.getInterpolation();
 
     bool fileInterpUsed = false;
-    Lut1DOpDataRcPtr lut = HandleLUT1D(cachedFile->lut, fileInterp, fileInterpUsed);
+    Lut1DOpDataRcPtr lut = HandleLUT1D(cachedFile->lut, fileInterp, fileInterpUsed, untypedCachedFile);
 
     if (!fileInterpUsed)
     {

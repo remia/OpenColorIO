@@ -277,7 +277,7 @@ LocalFileFormat::buildFileOps(OpRcPtrVec & ops,
     if (cachedFile->lut3D)
     {
         bool fileInterpUsed = false;
-        lut3D = HandleLUT3D(cachedFile->lut3D, fileInterp, fileInterpUsed);
+        lut3D = HandleLUT3D(cachedFile->lut3D, fileInterp, fileInterpUsed, untypedCachedFile);
 
         if (!fileInterpUsed)
         {
@@ -319,4 +319,3 @@ FileFormat * CreateFileFormatVF()
 }
 
 } // namespace OCIO_NAMESPACE
-

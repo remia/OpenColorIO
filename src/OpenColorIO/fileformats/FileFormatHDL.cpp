@@ -820,8 +820,8 @@ LocalFileFormat::buildFileOps(OpRcPtrVec & ops,
     const auto fileInterp = fileTransform.getInterpolation();
 
     bool fileInterpUsed = false;
-    auto lut1D = HandleLUT1D(cachedFile->lut1D, fileInterp, fileInterpUsed);
-    auto lut3D = HandleLUT3D(cachedFile->lut3D, fileInterp, fileInterpUsed);
+    auto lut1D = HandleLUT1D(cachedFile->lut1D, fileInterp, fileInterpUsed, untypedCachedFile);
+    auto lut3D = HandleLUT3D(cachedFile->lut3D, fileInterp, fileInterpUsed, untypedCachedFile);
 
     if (!fileInterpUsed)
     {

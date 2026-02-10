@@ -321,7 +321,7 @@ void LocalFileFormat::buildFileOps(OpRcPtrVec & ops,
     const auto fileInterp = fileTransform.getInterpolation();
 
     bool fileInterpUsed = false;
-    auto lut = HandleLUT3D(cachedFile->lut, fileInterp, fileInterpUsed);
+    auto lut = HandleLUT3D(cachedFile->lut, fileInterp, fileInterpUsed, untypedCachedFile);
 
     if (!fileInterpUsed)
     {

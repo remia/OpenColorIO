@@ -32,7 +32,8 @@ void CreateOffsetOp(OpRcPtrVec & ops,
 
 void CreateMatrixOffsetOp(OpRcPtrVec & ops,
                             const double * m44, const double * offset4,
-                            TransformDirection direction);
+                            TransformDirection direction,
+                            const std::string & filePath = "");
 
 void CreateScaleOffsetOp(OpRcPtrVec & ops,
                             const double * scale4, const double * offset4,

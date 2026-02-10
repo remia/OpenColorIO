@@ -261,8 +261,9 @@ void BuildCDLOp(OpRcPtrVec & ops,
 
         auto cdl = data.clone();
         CreateCDLOp(ops, cdl, dir);
+
+        // TODO: Add src attribute?
     }
 }
 
 } // namespace OCIO_NAMESPACE
-

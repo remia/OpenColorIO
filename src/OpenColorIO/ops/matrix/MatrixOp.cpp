@@ -255,12 +255,22 @@ void CreateSaturationOp(OpRcPtrVec & ops,
 
 void CreateMatrixOffsetOp(OpRcPtrVec & ops,
                           const double * m44, const double * offset4,
-                          TransformDirection direction)
+                          TransformDirection direction,
+                          const std::string & filePath)
 {
     auto mat = std::make_shared<MatrixOpData>();
     mat->setRGBA(m44);
     mat->setRGBAOffsets(offset4);
     mat->setDirection(direction);
+
+    // Feels very hacky, maybe Op class could have a way to update FormatMetadata
+    // after creation, allowing this to happen in FileFormatSpimtx.cpp instead?
+    if (!filePath.empty())
+    {
+        auto formatMetadata = mat->getFormatMetadata();
+        formatMetadata.addAttribute("src", filePath.c_str());
+        mat->getFormatMetadata() = formatMetadata;
+    }
 
     CreateMatrixOp(ops, mat, TRANSFORM_DIR_FORWARD);
 }
@@ -383,4 +393,3 @@ void BuildMatrixOp(OpRcPtrVec & ops,
 }
 
 } // namespace OCIO_NAMESPACE
-
