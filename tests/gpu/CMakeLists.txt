@@ -41,9 +41,12 @@ target_link_libraries(test_gpu_exec
 		testutils
 )
 
-add_test(NAME test_gpu COMMAND test_gpu_exec)
+add_test(NAME test_opengl COMMAND test_gpu_exec)
 if(APPLE)
-	add_test(NAME test_metal COMMAND test_gpu_exec -metal)
+	add_test(NAME test_metal COMMAND test_gpu_exec --metal)
+endif()
+if(OCIO_EGL_HEADLESS)
+	add_test(NAME test_opengl_es COMMAND test_gpu_exec --opengl-es)
 endif()
 
 # Note: To avoid changing PATH from outside the cmake files.

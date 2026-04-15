@@ -100,6 +100,10 @@ protected:
     // of 1.10 when the minimum version for OCIO is 1.20).
     std::string getGLSLVersionString();
 
+    // Build the default vertex shader source that outputs a texCoord varying/out variable
+    // derived from the vertex position attribute.
+    std::string getGLSLVertexShaderString();
+
 private:
     OpenGLBuilder();
     OpenGLBuilder(const OpenGLBuilder &) = delete;
@@ -109,6 +113,7 @@ private:
     unsigned m_startIndex;                 // Starting index for texture allocations
     TextureIds m_textureIds;               // Texture ids of all needed textures
     Uniforms m_uniforms;                   // Vector of dynamic parameters
+    unsigned m_vertShader;                 // Vertex shader identifier
     unsigned m_fragShader;                 // Fragment shader identifier
     unsigned m_program;                    // Program identifier
     std::string m_shaderCacheID;           // Current shader program key

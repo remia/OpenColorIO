@@ -629,6 +629,8 @@ int main(int argc, const char ** argv)
 #endif
 
     bool printHelp = false;
+    bool useOpenGLRenderer = false;
+    bool useOpenGLESRenderer = false;
     bool useMetalRenderer = false;
     bool useVulkanRenderer = false;
     bool verbose = false;
@@ -639,15 +641,17 @@ int main(int argc, const char ** argv)
 
     ArgParse ap;
     ap.options("\nCommand line arguments:\n",
-               "--help",          &printHelp,        "Print help message",
-               "--metal",         &useMetalRenderer, "Run the GPU unit test with Metal",
-               "--vulkan",        &useVulkanRenderer, "Run the GPU unit test with Vulkan",
-               "-v",              &verbose,          "Output the GPU shader program",
-               "--stop_on_error", &stopOnFirstError, "Stop on the first error",
-               "--run_only %s",   &filter,           "Run only some unit tests\n"
-                                                     "\tex: --run_only ExponentOp/forward i.e. run only \"ExponentOp/forward\"\n"
-                                                     "\tex: --run_only ExponentOp         i.e. run \"ExponentOp/*\"\n"
-                                                     "\tex: --run_only /forward           i.e. run \"*/forward\"\n",
+               "--help",          &printHelp,            "Print help message",
+               "--opengl",        &useOpenGLRenderer,    "Run the GPU unit test with desktop OpenGL (default)",
+               "--opengl-es",     &useOpenGLESRenderer,  "Run the GPU unit test with OpenGL ES 3.0 (headless EGL builds only)",
+               "--metal",         &useMetalRenderer,     "Run the GPU unit test with Metal",
+               "--vulkan",        &useVulkanRenderer,    "Run the GPU unit test with Vulkan",
+               "-v",              &verbose,              "Output the GPU shader program",
+               "--stop_on_error", &stopOnFirstError,     "Stop on the first error",
+               "--run_only %s",   &filter,               "Run only some unit tests\n"
+                                                         "\tex: --run_only ExponentOp/forward i.e. run only \"ExponentOp/forward\"\n"
+                                                         "\tex: --run_only ExponentOp         i.e. run \"ExponentOp/*\"\n"
+                                                         "\tex: --run_only /forward           i.e. run \"*/forward\"\n",
                nullptr);
 
     if (ap.parse(argc, argv) < 0)
@@ -662,6 +666,29 @@ int main(int argc, const char ** argv)
         ap.usage();
         return 1;
     }
+
+    // Validate mutually exclusive renderer flags.
+    {
+        int rendererCount = (useOpenGLRenderer   ? 1 : 0)
+                          + (useOpenGLESRenderer ? 1 : 0)
+                          + (useMetalRenderer    ? 1 : 0)
+                          + (useVulkanRenderer   ? 1 : 0);
+        if (rendererCount > 1)
+        {
+            std::cerr << "Error: --opengl, --opengl-es, --metal, and --vulkan are mutually exclusive."
+                      << std::endl;
+            return 1;
+        }
+    }
+
+#ifndef OCIO_HEADLESS_ENABLED
+    if (useOpenGLESRenderer)
+    {
+        std::cerr << "Error: --opengl-es requires a headless EGL build (OCIO_HEADLESS_ENABLED)."
+                  << std::endl;
+        return 1;
+    }
+#endif
 
     if (!filter.empty())
     {
@@ -712,7 +739,7 @@ int main(int argc, const char ** argv)
         }
         else
         {
-            app = OCIO::OglApp::CreateOglApp("GPU tests", 10, 10);
+            app = OCIO::OglApp::CreateOglApp("GPU tests", 10, 10, useOpenGLESRenderer);
         }
     }
     catch (const OCIO::Exception & e)
@@ -788,7 +815,13 @@ int main(int argc, const char ** argv)
         // Prepare the unit test.
 
         test->setVerbose(verbose);
-        OCIO::GpuLanguage gpuLang = OCIO::GPU_LANGUAGE_GLSL_1_2;
+
+        // Select the appropriate shading language for the active renderer.
+        OCIO::GpuLanguage gpuLang = OCIO::GPU_LANGUAGE_GLSL_4_0;
+        if (useOpenGLESRenderer)
+        {
+            gpuLang = OCIO::GPU_LANGUAGE_GLSL_ES_3_0;
+        }
 #if __APPLE__
         if (useMetalRenderer)
         {

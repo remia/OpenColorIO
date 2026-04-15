@@ -116,8 +116,11 @@ public:
     void virtual printGLInfo() const noexcept;
 
     // Return a pointer of either ScreenApp or HeadlessApp depending on the
-    // OCIO_HEADLESS_ENABLED preprocessor.
-    static OglAppRcPtr CreateOglApp(const char * winTitle, int winWidth, int winHeight);
+    // OCIO_HEADLESS_ENABLED preprocessor.  When useGLES is true (only effective in
+    // headless / EGL builds) an OpenGL ES 3.0 context is created; otherwise a desktop
+    // OpenGL context is used.
+    static OglAppRcPtr CreateOglApp(const char * winTitle, int winWidth, int winHeight,
+                                    bool useGLES = false);
 
 protected:
     // Window or output image size (set using reshape).
@@ -128,8 +131,14 @@ protected:
     int m_viewportWidth{ 0 };
     int m_viewportHeight{ 0 };
 
+    // True when the context uses OpenGL ES (GLES 3.0 via EGL).
+    // Set by the concrete subclass before calling setupCommon().
+    bool m_useGLES{ false };
+
     // Initialize the OpenGL engine, and set up GLEW if needed.
     void setupCommon();
+    // Create the VAO/VBO used to draw the full-screen processing quad.
+    void setupQuadGeometry();
     
     void setImageDimensions(int imgWidth, int imgHeight, Components comp);
     Components getImageComponents() const { return m_components; }
@@ -153,6 +162,10 @@ private:
     int m_imageHeight{ 0 };
     Components m_components{ COMPONENTS_RGBA };
     unsigned int m_imageTexID;
+
+    // VAO and VBO for the full-screen processing quad.
+    unsigned int m_quadVAO{ 0 };
+    unsigned int m_quadVBO{ 0 };
 };
 
 class ScreenApp: public OglApp
@@ -183,7 +196,9 @@ class HeadlessApp: public OglApp
 public:
     HeadlessApp() = delete;
 
-    HeadlessApp(const char * winTitle, int bufWidth, int bufHeight);
+    // When useGLES is true an OpenGL ES 3.0 EGL context is created.
+    // When useGLES is false a desktop OpenGL EGL context is created.
+    HeadlessApp(const char * winTitle, int bufWidth, int bufHeight, bool useGLES = false);
 
     ~HeadlessApp();
 

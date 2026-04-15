@@ -92,16 +92,18 @@ void MetalApp::prepareAndBindOpenGLState()
     // A dummyShaderDesc is enough.
     // The builder will only be used to build GL program
     GpuShaderDescRcPtr dummyShaderDesc = GpuShaderDesc::CreateShaderDesc();
+    dummyShaderDesc->setLanguage(GPU_LANGUAGE_GLSL_4_0);
     m_oglBuilder = OpenGLBuilder::Create(dummyShaderDesc);
     
     std::ostringstream main;
-        
     main <<    std::endl
+            << "in vec2 texCoord;" << std::endl
+            << "out vec4 fragColor;" << std::endl
             << "uniform sampler2DRect img;" << std::endl
             << std::endl
             << "void main()" << std::endl
             << "{" << std::endl
-            << "    gl_FragColor = texture2DRect(img, gl_TexCoord[0].st * "
+            << "    fragColor = texture(img, texCoord * "
             << "vec2(" << m_outputImage->getWidth() << ", " << m_outputImage->getHeight() << "));"
             << std::endl
             << "}" << std::endl;

@@ -4,8 +4,7 @@
 
 #ifdef __APPLE__
 
-#include <OpenGL/gl.h>
-#include <OpenGL/glext.h>
+#include <OpenGL/gl3.h>
 
 #elif _WIN32
 
@@ -34,18 +33,36 @@ namespace
 {
 bool GetGLError(std::string & error)
 {
-    const GLenum glErr = glGetError();
-    if(glErr!=GL_NO_ERROR)
+    // Drain all pending errors from the queue so subsequent calls start clean.
+    bool hadError = false;
+    GLenum glErr = GL_NO_ERROR;
+    while ((glErr = glGetError()) != GL_NO_ERROR)
     {
-#ifdef __APPLE__
-        // Unfortunately no gluErrorString equivalent on Mac.
-        error = "OpenGL Error";
+        if (hadError)
+            error += "; ";
+
+        // Always include the numeric code so unknown enumerants are still identifiable.
+        std::ostringstream hexCode;
+        hexCode << "0x" << std::hex << std::uppercase << glErr;
+
+#if defined(__APPLE__) || defined(OCIO_HEADLESS_ENABLED)
+        // gluErrorString is not available on Apple or in OpenGL ES.
+        error += "OpenGL Error (" + hexCode.str() + ")";
 #else
-        error = (const char*)gluErrorString(glErr);
+        const char * glErrStr = (const char *)gluErrorString(glErr);
+        if (glErrStr && *glErrStr)
+        {
+            error += glErrStr;
+            error += " (" + hexCode.str() + ")";
+        }
+        else
+        {
+            error += "Unknown OpenGL error (" + hexCode.str() + ")";
+        }
 #endif
-        return true;
+        hadError = true;
     }
-    return false;
+    return hadError;
 }
 
 void CheckStatus()
@@ -56,6 +73,23 @@ void CheckStatus()
         throw Exception(error.c_str());
     }
 }
+
+// Overload that prepends the calling-site context to the error message,
+// making it straightforward to find which GL call raised the error.
+void CheckStatus(const char * context)
+{
+    std::string error;
+    if (GetGLError(error))
+    {
+        std::string msg(context);
+        msg += ": ";
+        msg += error;
+        throw Exception(msg.c_str());
+    }
+}
+
+// From Claude:
+// In GLES 3.0, linear filtering for 32-bit float textures (GL_RGB32F, GL_R32F) requires the GL_OES_texture_float_linear extension (or GLES 3.2). Without it, setting GL_LINEAR on these textures silently falls back to GL_NEAREST. If any LUT that OCIO allocates is supposed to be linearly interpolated, this would cause staircase sampling errors that look like precision failures. You can check at runtime with glGetString(GL_EXTENSIONS) or by checking GL_EXT_color_buffer_float/GL_OES_texture_float_linear. If the extension is absent, SetTextureParameters should force GL_NEAREST for float-format textures on GLES.
 
 void SetTextureParameters(GLenum textureType, Interpolation interpolation)
 {
@@ -73,6 +107,7 @@ void SetTextureParameters(GLenum textureType, Interpolation interpolation)
     glTexParameteri(textureType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(textureType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(textureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    CheckStatus("SetTextureParameters");
 }
 
 void AllocateTexture3D(unsigned index, unsigned & texId, 
@@ -85,15 +120,14 @@ void AllocateTexture3D(unsigned index, unsigned & texId,
     }
 
     glGenTextures(1, &texId);
-
     glActiveTexture(GL_TEXTURE0 + index);
-
     glBindTexture(GL_TEXTURE_3D, texId);
 
     SetTextureParameters(GL_TEXTURE_3D, interpolation);
 
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F_ARB,
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F,
                     edgelen, edgelen, edgelen, 0, GL_RGB, GL_FLOAT, values);
+    CheckStatus("AllocateTexture3D");
 }
 
 void AllocateTexture(unsigned index, unsigned & texId,
@@ -108,7 +142,7 @@ void AllocateTexture(unsigned index, unsigned & texId,
         throw Exception("Missing texture data.");
     }
 
-    GLint internalformat = GL_RGB32F_ARB;
+    GLint internalformat = GL_RGB32F;
     GLenum format        = GL_RGB;
 
     if (channel == GpuShaderCreator::TEXTURE_RED_CHANNEL)
@@ -118,25 +152,22 @@ void AllocateTexture(unsigned index, unsigned & texId,
     }
 
     glGenTextures(1, &texId);
-
     glActiveTexture(GL_TEXTURE0 + index);
 
     switch (dimensions)
     {
     case GpuShaderCreator::TEXTURE_1D:
         glBindTexture(GL_TEXTURE_1D, texId);
-        
         SetTextureParameters(GL_TEXTURE_1D, interpolation);
-
         glTexImage1D(GL_TEXTURE_1D, 0, internalformat, width, 0, format, GL_FLOAT, values);
+        CheckStatus("AllocateTexture 1D");
         break;
 
     case GpuShaderCreator::TEXTURE_2D:
         glBindTexture(GL_TEXTURE_2D, texId);
-
         SetTextureParameters(GL_TEXTURE_2D, interpolation);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height, 0, format, GL_FLOAT, values);    
+        glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height, 0, format, GL_FLOAT, values);
+        CheckStatus("AllocateTexture 2D");
         break;
 
     default:
@@ -147,17 +178,17 @@ void AllocateTexture(unsigned index, unsigned & texId,
 
 GLuint CompileShaderText(GLenum shaderType, const char * text)
 {
-    CheckStatus();
-
     if(!text || !*text)
     {
-        throw Exception("Invalid fragment shader program");
+        throw Exception("Invalid shader program source");
     }
 
     GLuint shader;
     GLint stat;
 
     shader = glCreateShader(shaderType);
+    CheckStatus("CompileShaderText: glCreateShader");
+
     glShaderSource(shader, 1, (const GLchar **) &text, NULL);
     glCompileShader(shader);
     glGetShaderiv(shader, GL_COMPILE_STATUS, &stat);
@@ -179,18 +210,23 @@ GLuint CompileShaderText(GLenum shaderType, const char * text)
     return shader;
 }
 
-void LinkShaders(GLuint program, GLuint fragShader)
+void LinkShaders(GLuint program, GLuint vertShader, GLuint fragShader)
 {
     CheckStatus();
 
-    if (!fragShader)
+    if (!vertShader || !fragShader)
     {
         throw Exception("Missing shader program");
     }
-    else        
-    {
-        glAttachShader(program, fragShader);
-    }
+
+    glAttachShader(program, vertShader);
+    glAttachShader(program, fragShader);
+
+    // Bind the vertex attribute locations before linking so all GLSL versions
+    // (including those that do not support layout qualifiers) use predictable
+    // locations.  Attribute 0 = position, 1 = texCoordIn.
+    glBindAttribLocation(program, 0, "position");
+    glBindAttribLocation(program, 1, "texCoordIn");
 
     glLinkProgram(program);
 
@@ -226,9 +262,10 @@ void OpenGLBuilder::Uniform::setUp(unsigned program)
     std::string error;
     if (GetGLError(error))
     {
-        std::string err("Shader parameter ");
+        std::string err("Uniform::setUp glGetUniformLocation for \"");
         err += m_name;
-        err += " not found: ";
+        err += "\": ";
+        err += error;
         throw Exception(err.c_str());
     }
 }
@@ -277,6 +314,7 @@ OpenGLBuilderRcPtr OpenGLBuilder::Create(const GpuShaderDescRcPtr & shaderDesc)
 OpenGLBuilder::OpenGLBuilder(const GpuShaderDescRcPtr & shaderDesc)
     :   m_shaderDesc(shaderDesc)
     ,   m_startIndex(0)
+    ,   m_vertShader(0)
     ,   m_fragShader(0)
     ,   m_program(glCreateProgram())
     ,   m_verbose(false)
@@ -286,6 +324,13 @@ OpenGLBuilder::OpenGLBuilder(const GpuShaderDescRcPtr & shaderDesc)
 OpenGLBuilder::~OpenGLBuilder()
 {
     deleteAllTextures();
+
+    if(m_vertShader)
+    {
+        glDetachShader(m_program, m_vertShader);
+        glDeleteShader(m_vertShader);
+        m_vertShader = 0;
+    }
 
     if(m_fragShader)
     {
@@ -415,6 +460,7 @@ void OpenGLBuilder::useAllTextures()
             glGetUniformLocation(m_program,
                                  data.m_samplerName.c_str()),
                                  GLint(m_startIndex + idx) );
+        CheckStatus(("useAllTextures: \"" + data.m_samplerName + "\"").c_str());
     }
 }
 
@@ -479,11 +525,63 @@ std::string OpenGLBuilder::getGLSLVersionString()
     }
 }
 
+std::string OpenGLBuilder::getGLSLVertexShaderString()
+{
+    std::ostringstream oss;
+    oss << getGLSLVersionString() << "\n";
+
+    switch (m_shaderDesc->getLanguage())
+    {
+    case GPU_LANGUAGE_GLSL_ES_1_0:
+    case GPU_LANGUAGE_GLSL_1_2:
+    case GPU_LANGUAGE_MSL_2_0:
+        // GLSL ES 1.0 and GLSL 1.20: use 'attribute'/'varying' keywords.
+        oss << "attribute vec2 position;\n"
+            << "attribute vec2 texCoordIn;\n"
+            << "varying vec2 texCoord;\n"
+            << "void main()\n"
+            << "{\n"
+            << "    texCoord = texCoordIn;\n"
+            << "    gl_Position = vec4(position, 0.0, 1.0);\n"
+            << "}\n";
+        break;
+
+    case GPU_LANGUAGE_GLSL_1_3:
+    case GPU_LANGUAGE_GLSL_4_0:
+    case GPU_LANGUAGE_GLSL_VK_4_6:
+    case GPU_LANGUAGE_GLSL_ES_3_0:
+        // GLSL 1.30+ and GLSL ES 3.0: use 'in'/'out' keywords.
+        oss << "in vec2 position;\n"
+            << "in vec2 texCoordIn;\n"
+            << "out vec2 texCoord;\n"
+            << "void main()\n"
+            << "{\n"
+            << "    texCoord = texCoordIn;\n"
+            << "    gl_Position = vec4(position, 0.0, 1.0);\n"
+            << "}\n";
+        break;
+    case GPU_LANGUAGE_CG:
+    case LANGUAGE_OSL_1:
+    case GPU_LANGUAGE_HLSL_SM_5_0:
+    default:
+        throw Exception("Invalid shader language for OpenGLBuilder");
+    }
+
+    return oss.str();
+}
+
 unsigned OpenGLBuilder::buildProgram(const std::string & clientShaderProgram, bool standaloneShader)
 {
     const std::string shaderCacheID = m_shaderDesc->getCacheID();
     if(shaderCacheID!=m_shaderCacheID)
     {
+        if(m_vertShader)
+        {
+            glDetachShader(m_program, m_vertShader);
+            glDeleteShader(m_vertShader);
+            m_vertShader = 0;
+        }
+
         if(m_fragShader)
         {
             glDetachShader(m_program, m_fragShader);
@@ -492,20 +590,38 @@ unsigned OpenGLBuilder::buildProgram(const std::string & clientShaderProgram, bo
 
         std::ostringstream oss;
         oss  << getGLSLVersionString() << std::endl
+             << "#ifdef GL_ES" << std::endl
+             << "    #ifdef GL_FRAGMENT_PRECISION_HIGH" << std::endl
+             << "        precision highp float;" << std::endl
+             << "        precision highp int;" << std::endl
+             << "        precision highp sampler2D;" << std::endl
+             << "        precision highp sampler3D;" << std::endl
+             << "    #else" << std::endl
+             << "        precision mediump float;" << std::endl
+             << "        precision mediump int;" << std::endl
+             << "        precision mediump sampler2D;" << std::endl
+             << "        precision mediump sampler3D;" << std::endl
+             << "    #endif" << std::endl
+             << "#endif" << std::endl
              << (!standaloneShader ? m_shaderDesc->getShaderText() : "") << std::endl
              << clientShaderProgram << std::endl;
 
+        const std::string vertShaderStr = getGLSLVertexShaderString();
+
         if(m_verbose)
         {
-            std::cout << "\nGPU Shader Program:\n\n"
+            std::cout << "\nGPU Vertex Shader Program:\n\n"
+                      << vertShaderStr
+                      << "\nGPU Fragment Shader Program:\n\n"
                       << oss.str()
                       << "\n\n"
                       << std::flush;
         }
 
         m_fragShader = CompileShaderText(GL_FRAGMENT_SHADER, oss.str().c_str());
+        m_vertShader = CompileShaderText(GL_VERTEX_SHADER, vertShaderStr.c_str());
 
-        LinkShaders(m_program, m_fragShader);
+        LinkShaders(m_program, m_vertShader, m_fragShader);
         m_shaderCacheID = shaderCacheID;
 
         linkAllUniforms();
@@ -537,7 +653,7 @@ unsigned OpenGLBuilder::GetTextureMaxWidth()
     while(w>1)
     {
         glTexImage2D(GL_PROXY_TEXTURE_2D, 0, 
-                     GL_RGB32F_ARB, 
+                     GL_RGB32F, 
                      w, h, 0, 
                      GL_RGB, GL_FLOAT, NULL);
 
@@ -567,7 +683,7 @@ unsigned OpenGLBuilder::GetTextureMaxWidth()
             glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0,
                                      GL_TEXTURE_COMPONENTS, &format);
 
-            texValid = texValid && (GL_RGB32F_ARB==format);
+            texValid = texValid && (GL_RGB32F==format);
 
             while((glErr=glGetError()) != GL_NO_ERROR);
         }
