@@ -457,7 +457,11 @@ public:
     virtual void setSliderMinEdge(float sliderMixingMinEdge) noexcept = 0;
 
     /// Minimum edge of a UI slider for conversion to mixing space.
-    virtual float getSliderMinEdge() const noexcept = 0;
+    virtual
+    float
+    getSliderMinEdge()
+    const
+    noexcept = 0;
 
     /// Set the maximum edge of a UI slider for conversion to mixing space.
     virtual void setSliderMaxEdge(float sliderMixingMaxEdge) noexcept = 0;
