@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright Contributors to the OpenColorIO Project.
+#
+# libabigail suppression specification for the OpenColorIO ABI compatibility
+# check (see .github/workflows/abi_compatibility.yml).
+#
+# Reference:
+#   https://sourceware.org/libabigail/manual/libabigail-concepts.html#suppression-specifications
+#
+# The ABI check is run with `--headers-dir`, so abidiff already restricts the
+# comparison to the types that are reachable from the installed public headers
+# (include/OpenColorIO/*.h). Internal symbols and statically linked third-party
+# dependencies (expat, yaml-cpp, pystring, Imath, minizip-ng, zlib, ...) are
+# therefore ignored automatically and do NOT need entries here.
+#
+# Add a suppression below ONLY to allow-list an *intentional* ABI change that
+# you have verified is safe for consumers in the current major.minor series
+# (this should be very rare in a patch release). Every entry must:
+#   * carry a comment justifying why the change is ABI-safe, and
+#   * reference the PR / issue that introduced it.
+# Entries become obsolete once the next minor/major release re-baselines the
+# ABI, so prune them at that point.
+#
+# ----------------------------------------------------------------------------
+# Example (kept commented out on purpose):
+#
+# Allow a new data member appended at the end of an opaque/impl-detail struct,
+# which does not change the layout seen by existing consumers:
+#
+# [suppress_type]
+#   name = OpenColorIO_v2_6::SomeType::Impl
+#   has_data_member_inserted_at = end
+#
+# Allow a newly added member function (additions are backward compatible):
+#
+# [suppress_function]
+#   name_regexp = ^OpenColorIO_v2_6::.*::newlyAddedMethod
+# ----------------------------------------------------------------------------
