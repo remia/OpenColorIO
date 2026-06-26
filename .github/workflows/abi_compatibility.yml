@@ -1,0 +1,288 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright Contributors to the OpenColorIO Project.
+#
+# GitHub Actions workflow file
+# https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions
+#
+# ABI compatibility gate for patch releases.
+#
+# Patch releases are cut from the RB-MAJOR.MINOR release branches (e.g. RB-2.6),
+# and a patch release must not break the ABI promised by the library's SONAME.
+# OpenColorIO sets SOVERSION = MAJOR.MINOR (see the top-level CMakeLists.txt), so
+# every binary linked against libOpenColorIO.so.<MAJOR.MINOR> -- i.e. built
+# against X.Y.0 -- is expected to keep working with any later X.Y.Z without
+# recompilation.
+#
+# This workflow enforces that contract *before* a patch ships: it runs on every
+# pull request targeting an RB-* branch, builds the shared library from the
+# post-merge state of the PR and from the series anchor (X.Y.0), and compares
+# the two ABIs with libabigail's `abidiff`. If the change would break the
+# series ABI, the check fails and the PR is blocked.
+#
+# -----------------------------------------------------------------------------
+# Why libabigail (`abidiff`)?
+# -----------------------------------------------------------------------------
+# Several tools can compare C/C++ ABIs. The options that were considered:
+#
+#   * libabigail (abidiff / abidw)  -- CHOSEN.
+#       Actively maintained by Sourceware/Red Hat and used as the ABI gate by
+#       the Linux kernel, systemd, and most major distros. Reads DWARF debug
+#       info straight from the built .so (no source-level reparsing), has a
+#       deep model of C++ (vtables, templates, member layout, mangling), gives
+#       scriptable bitmask exit codes that make CI gating trivial, supports
+#       `--headers-dir` to restrict the diff to the public API, and supports
+#       suppression files for the rare intentional exception. Installable in
+#       the ASWF ci-ocio container via dnf.
+#
+#   * abi-compliance-checker (+ abi-dumper) -- the historical ABI Laboratory
+#       tool. Produces nice HTML reports, but is Perl-based, more loosely
+#       maintained, needs an extra dumper/vtable-dumper toolchain, and its
+#       header-driven mode is brittle with modern C++. Worse fit for an
+#       unattended CI gate; its exit handling is also less granular.
+#
+#   * Symbol-list diffing (nm -D / readelf --dyn-syms, or `abidw` symbol-only)
+#       -- trivial to run, but only catches added/removed *symbols*. It is
+#       blind to the changes that most often break consumers silently: struct
+#       layout, vtable order, enum/parameter/return-type changes. Too coarse to
+#       trust as the sole gate.
+#
+#   * Off-the-shelf "ABI check" marketplace Actions -- thin wrappers around one
+#       of the above, generally unmaintained and unpinned. Calling the tool
+#       directly is more transparent and easier to pin/audit.
+#
+# libabigail gives the strongest correctness guarantee for the least
+# maintenance, which is why it is used here.
+# -----------------------------------------------------------------------------
+
+name: ABI Compatibility
+
+on:
+  # Only run on pull requests that target a release branch. Patch releases are
+  # the only releases that must preserve the ABI, and they are always prepared
+  # on RB-MAJOR.MINOR branches.
+  pull_request:
+    branches:
+      - 'RB-*'
+
+  # Manual trigger, e.g. to dry-run the check against a release branch before
+  # opening the PR.
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: 'Release branch the change targets (e.g. RB-2.6)'
+        required: true
+        type: string
+      ref:
+        description: 'Ref to check as the proposed change (optional; defaults to the launched ref)'
+        required: false
+        type: string
+
+# A PR can be pushed to repeatedly; this double build is expensive, so cancel
+# superseded runs.
+concurrency:
+  group: abi-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  abi:
+    name: 'ABI compatibility check'
+    runs-on: ubuntu-latest
+    # Build inside the same ASWF image used by the CI workflow so the toolchain
+    # and dependencies match what releases are actually built with. Pinned to a
+    # stable VFX CY; bump this together with the CI matrix.
+    container:
+      image: aswf/ci-ocio:2025
+
+    steps:
+      - name: Install libabigail
+        run: |
+          dnf install -y libabigail \
+            || { dnf install -y epel-release && dnf install -y libabigail; }
+          abidiff --version
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Full history + tags are needed to resolve the anchor tag and to add
+          # a worktree for it. For a pull_request, github.ref is the merge ref
+          # (refs/pull/N/merge), i.e. the post-merge state we want to validate.
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
+
+      - name: Determine ABI baseline
+        id: versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The container checks out the workspace as a different user than the
+          # one git expects; mark everything safe so git/worktree commands work.
+          git config --global --add safe.directory '*'
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BASE_REF='${{ inputs.base_branch }}'
+            CURRENT_DESC="${{ inputs.ref || github.ref_name }} -> ${BASE_REF}"
+          else
+            BASE_REF='${{ github.base_ref }}'
+            CURRENT_DESC="PR #${{ github.event.pull_request.number }} -> ${BASE_REF}"
+          fi
+          echo "Target release branch: ${BASE_REF}"
+
+          # The release branch name encodes the series: RB-MAJOR.MINOR.
+          if [[ ! "${BASE_REF}" =~ ^RB-([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::notice::Base branch '${BASE_REF}' is not an RB-MAJOR.MINOR release branch; skipping ABI check."
+            echo "skip=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          MAJOR="${BASH_REMATCH[1]}"
+          MINOR="${BASH_REMATCH[2]}"
+
+          # Anchor on X.Y.0, the ABI first published under the MAJOR.MINOR
+          # SONAME. Comparing the proposed change directly against the series
+          # anchor enforces compatibility with every consumer linked against any
+          # release in the series. Fall back to the lowest existing patch tag if
+          # X.Y.0 is missing for some reason.
+          ANCHOR="v${MAJOR}.${MINOR}.0"
+          if git rev-parse -q --verify "refs/tags/${ANCHOR}" >/dev/null; then
+            BASELINE="${ANCHOR}"
+          else
+            BASELINE=$(git tag --list "v${MAJOR}.${MINOR}.*" | grep -E "^v${MAJOR}\.${MINOR}\.[0-9]+$" | sort -V | head -1)
+          fi
+          if [ -z "${BASELINE}" ]; then
+            echo "::notice::The ${MAJOR}.${MINOR} series has no published release tag yet, so there is no ABI to preserve. Skipping."
+            echo "skip=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "Comparing '${CURRENT_DESC}' against baseline ${BASELINE}"
+          {
+            echo "skip=false"
+            echo "baseline=${BASELINE}"
+            echo "current_desc=${CURRENT_DESC}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Write build helper
+        if: steps.versions.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "${RUNNER_TEMP}/abi_build.sh" <<'EOF'
+          #!/usr/bin/env bash
+          # Build only the shared library so abidiff can read the DWARF ABI.
+          # RelWithDebInfo is deliberate: it emits -g AND is the only optimized
+          # build type OCIO leaves unstripped (share/cmake/macros/StripUtils.cmake
+          # strips Release/MinSizeRel, which would erase the debug info abidiff
+          # needs). Everything not needed for the .so is turned off to keep the
+          # double build as fast as possible.
+          set -euo pipefail
+          SRC="$1"
+          OUT="$2"
+          cmake -S "${SRC}" -B "${OUT}/build" \
+                -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+                -DCMAKE_INSTALL_PREFIX="${OUT}/install" \
+                -DBUILD_SHARED_LIBS=ON \
+                -DOCIO_USE_SOVERSION=ON \
+                -DOCIO_BUILD_PYTHON=OFF \
+                -DOCIO_BUILD_APPS=OFF \
+                -DOCIO_BUILD_TESTS=OFF \
+                -DOCIO_BUILD_GPU_TESTS=OFF \
+                -DOCIO_BUILD_OPENFX=OFF \
+                -DOCIO_BUILD_DOCS=OFF \
+                -DOCIO_INSTALL_EXT_PACKAGES=MISSING \
+                -DOCIO_WARNING_AS_ERROR=OFF
+          cmake --build "${OUT}/build" --target install -- -j"$(nproc)"
+          EOF
+          chmod +x "${RUNNER_TEMP}/abi_build.sh"
+
+      - name: Build baseline (${{ steps.versions.outputs.baseline }})
+        if: steps.versions.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach "${RUNNER_TEMP}/baseline-src" "${{ steps.versions.outputs.baseline }}"
+          "${RUNNER_TEMP}/abi_build.sh" "${RUNNER_TEMP}/baseline-src" "${RUNNER_TEMP}/old"
+
+      - name: Build proposed change
+        if: steps.versions.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${RUNNER_TEMP}/abi_build.sh" "${GITHUB_WORKSPACE}" "${RUNNER_TEMP}/new"
+
+      - name: Compare ABI (abidiff)
+        if: steps.versions.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OLD_LIB=$(find "${RUNNER_TEMP}/old/install" -type f -name 'libOpenColorIO.so.*' | head -1)
+          NEW_LIB=$(find "${RUNNER_TEMP}/new/install" -type f -name 'libOpenColorIO.so.*' | head -1)
+          if [ -z "${OLD_LIB}" ] || [ -z "${NEW_LIB}" ]; then
+            echo "::error::Could not locate the built shared libraries (old='${OLD_LIB}' new='${NEW_LIB}')."
+            exit 1
+          fi
+          echo "Baseline library: ${OLD_LIB}"
+          echo "Proposed library: ${NEW_LIB}"
+
+          ARGS=(
+            # Restrict the comparison to types reachable from the public headers.
+            --headers-dir1 "${RUNNER_TEMP}/old/install/include"
+            --headers-dir2 "${RUNNER_TEMP}/new/install/include"
+            # Added symbols are forward-compatible for existing consumers, so do
+            # not count them as a breaking change (they would warrant a minor
+            # bump, but they do not break binaries linked against the baseline).
+            --no-added-syms
+            # Fail loudly instead of silently degrading to a weaker, symbol-only
+            # comparison if a build somehow lacks debug info.
+            --fail-no-debug-info
+          )
+          SUPPR="${GITHUB_WORKSPACE}/share/abi/ocio.abignore"
+          if [ -f "${SUPPR}" ]; then
+            ARGS+=(--suppressions "${SUPPR}")
+          fi
+
+          set +e
+          abidiff "${ARGS[@]}" "${OLD_LIB}" "${NEW_LIB}" | tee "${RUNNER_TEMP}/abidiff.txt"
+          STATUS=${PIPESTATUS[0]}
+          set -e
+
+          # abidiff exit code is a bitmask:
+          #   1 = ABIDIFF_ERROR (tool error)
+          #   2 = ABIDIFF_USAGE_ERROR
+          #   4 = ABIDIFF_ABI_CHANGE
+          #   8 = ABIDIFF_ABI_INCOMPATIBLE_CHANGE
+          {
+            echo "## ABI compatibility check"
+            echo ""
+            echo "- Baseline: \`${{ steps.versions.outputs.baseline }}\`"
+            echo "- Change:   ${{ steps.versions.outputs.current_desc }}"
+            echo ""
+            echo '```'
+            cat "${RUNNER_TEMP}/abidiff.txt"
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          if (( STATUS & 2 )); then
+            echo "::error::abidiff usage error (exit ${STATUS})."
+            exit 1
+          fi
+          if (( STATUS & 1 )); then
+            echo "::error::abidiff failed to run (exit ${STATUS}); a build may be missing debug info."
+            exit 1
+          fi
+          if (( STATUS & (4 | 8) )); then
+            echo "::error::This change breaks the ABI of the ${{ steps.versions.outputs.baseline }} series. A patch release must preserve the ABI. If the change is intentional and verified safe, add a justified suppression to share/abi/ocio.abignore."
+            exit 1
+          fi
+          echo "ABI is compatible with the baseline. ✅"
+
+      - name: Upload abidiff report
+        if: steps.versions.outputs.skip != 'true' && always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: abidiff-report
+          path: ${{ runner.temp }}/abidiff.txt
+          if-no-files-found: ignore
