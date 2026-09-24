@@ -47,8 +47,9 @@ endmacro()
 #   PREFER_CONFIG                   - Call find_package in CONFIG mode internally. 
 #                                     Note that it tries to find <dep_name>Config.cmake or 
 #                                     <dep_name>-Config.cmake directly.
-#   ALLOW_INSTALL                   - Try to install the dependency if not found. Note that a 
-#                                     corresponding Install<dep_name>.cmake file must exist.
+#   ALLOW_INSTALL                   - Try to install the dependency if not found. Note that a
+#                                     corresponding share/cmake/deps/<dep_name>.cmake recipe
+#                                     or Install<dep_name>.cmake file must exist.
 #   VERBOSE                         - Enable extra logging.
 #
 # Options (one value):

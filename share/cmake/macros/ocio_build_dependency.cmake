@@ -1,0 +1,396 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright Contributors to the OpenColorIO Project.
+
+include_guard(GLOBAL)
+
+# Location of the per-dependency build recipes (share/cmake/deps/<dep_name>.cmake).
+set(OCIO_DEPS_RECIPES_DIR "${CMAKE_CURRENT_LIST_DIR}/../deps")
+
+# Build and install locations of the dependencies built by OCIO.
+set(OCIO_EXT_BUILD_ROOT "${PROJECT_BINARY_DIR}/ext/build")
+set(OCIO_EXT_DIST_ROOT "${PROJECT_BINARY_DIR}/ext/dist")
+
+###################################################################################################
+# ocio_build_dependency downloads, builds and installs a dependency at configure time, so that
+# the caller can then locate it with a regular find_package() call, relying on the CMake
+# configuration files exported by the dependency itself.
+#
+# The dependency is installed into ${OCIO_EXT_DIST_ROOT} (<build>/ext/dist by default) and built
+# in <build>/ext/build/<dep_name>. A stamp file records all the inputs of the build, so that
+# subsequent configurations skip the build when nothing changed.
+#
+# Argument:
+#   dep_name is the name of the dependency (package). Please note that dep_name is case sensitive.
+#
+# Options (one value):
+#   VERSION                     - Version of the dependency being built (required).
+#   URL                         - URL of the source archive to download.
+#   URL_HASH                    - Hash of the source archive, in the <ALGO>=<value> format.
+#   GIT_REPOSITORY              - Git repository to clone, alternatively to URL.
+#   GIT_TAG                     - Git tag or branch to checkout.
+#   SOURCE_SUBDIR               - Sub-directory of the sources containing the CMakeLists.txt.
+#   PROJECT_DIR                 - Directory of an OCIO provided CMakeLists.txt to use instead of
+#                                 the one from the sources, for dependencies that don't provide
+#                                 a usable one. The project receives the location of the sources
+#                                 and the version in OCIO_DEP_SOURCE_DIR and OCIO_DEP_VERSION.
+#
+# Options (multiple values):
+#   CMAKE_ARGS                  - Extra arguments for the dependency configuration step.
+#
+# Setting OCIO_<dep_name>_SOURCE_DIR skips the download step and builds the dependency from
+# the given local sources instead (e.g. for offline builds).
+###################################################################################################
+function (ocio_build_dependency dep_name)
+    cmake_parse_arguments(
+        PARSE_ARGV 1
+        # prefix
+        arg
+        # options
+        ""
+        # one value keywords
+        "VERSION;URL;URL_HASH;GIT_REPOSITORY;GIT_TAG;SOURCE_SUBDIR;PROJECT_DIR"
+        # multi value keywords
+        "CMAKE_ARGS")
+
+    if(NOT arg_VERSION)
+        message(FATAL_ERROR "ocio_build_dependency(${dep_name}): VERSION is required.")
+    endif()
+    if(NOT arg_URL AND NOT arg_GIT_REPOSITORY AND NOT OCIO_${dep_name}_SOURCE_DIR)
+        message(FATAL_ERROR "ocio_build_dependency(${dep_name}): URL or GIT_REPOSITORY is required.")
+    endif()
+
+    set(_root_dir    "${OCIO_EXT_BUILD_ROOT}/${dep_name}")
+    set(_src_dir     "${_root_dir}/src")
+    set(_build_dir   "${_root_dir}/build")
+    set(_stamp_file  "${_root_dir}/${dep_name}.stamp")
+    set(_init_cache  "${_root_dir}/${dep_name}-init-cache.cmake")
+
+    if(OCIO_${dep_name}_SOURCE_DIR)
+        set(_src_dir "${OCIO_${dep_name}_SOURCE_DIR}")
+    endif()
+
+    ###############################################################################################
+    ### Build configurations ###
+
+    get_property(_is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+    if(_is_multi_config)
+        set(_build_types Release Debug)
+    elseif(CMAKE_BUILD_TYPE)
+        set(_build_types ${CMAKE_BUILD_TYPE})
+    else()
+        set(_build_types Release)
+    endif()
+
+    ###############################################################################################
+    ### Initial cache shared by all the dependencies ###
+
+    # Variables forwarded from the OCIO configuration when defined.
+    set(_forwarded_vars
+        CMAKE_TOOLCHAIN_FILE
+        CMAKE_CXX_STANDARD
+        CMAKE_C_VISIBILITY_PRESET
+        CMAKE_CXX_VISIBILITY_PRESET
+        CMAKE_VISIBILITY_INLINES_HIDDEN
+        CMAKE_MSVC_RUNTIME_LIBRARY
+        CMAKE_OBJECT_PATH_MAX
+        CMAKE_INSTALL_MESSAGE
+        CMAKE_FIND_FRAMEWORK
+        CMAKE_FIND_APPBUNDLE
+        CMAKE_OSX_ARCHITECTURES
+        CMAKE_OSX_DEPLOYMENT_TARGET
+        CMAKE_OSX_SYSROOT
+        ANDROID_PLATFORM
+        ANDROID_ABI
+        ANDROID_STL
+    )
+    if(NOT CMAKE_TOOLCHAIN_FILE)
+        # The toolchain file is in charge of the compilers when there is one.
+        list(APPEND _forwarded_vars
+            CMAKE_C_COMPILER
+            CMAKE_CXX_COMPILER
+            CMAKE_C_COMPILER_LAUNCHER
+            CMAKE_CXX_COMPILER_LAUNCHER
+        )
+    endif()
+
+    set(_cache_content "# Generated by ocio_build_dependency(${dep_name}), do not edit.\n")
+    macro (_ocio_add_cache_entry var value)
+        string(APPEND _cache_content "set(${var} [==[${value}]==] CACHE STRING \"\" FORCE)\n")
+    endmacro()
+
+    foreach(_var ${_forwarded_vars})
+        if(DEFINED ${_var} AND NOT "${${_var}}" STREQUAL "")
+            _ocio_add_cache_entry(${_var} "${${_var}}")
+        endif()
+    endforeach()
+
+    _ocio_add_cache_entry(CMAKE_INSTALL_PREFIX "${OCIO_EXT_DIST_ROOT}")
+    _ocio_add_cache_entry(CMAKE_INSTALL_LIBDIR "lib")
+    # Dependencies built previously (e.g. ZLIB for minizip-ng) take precedence.
+    set(_prefix_path "${OCIO_EXT_DIST_ROOT}" ${CMAKE_PREFIX_PATH})
+    _ocio_add_cache_entry(CMAKE_PREFIX_PATH "${_prefix_path}")
+    _ocio_add_cache_entry(CMAKE_FIND_PACKAGE_NO_PACKAGE_REGISTRY ON)
+    _ocio_add_cache_entry(CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY ON)
+    # OCIO always links the dependencies it builds statically, and hides their symbols.
+    _ocio_add_cache_entry(BUILD_SHARED_LIBS OFF)
+    _ocio_add_cache_entry(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    _ocio_add_cache_entry(CMAKE_POLICY_DEFAULT_CMP0063 NEW)
+    # Required for CMake 4.0+ compatibility with dependencies requiring CMake < 3.5.
+    _ocio_add_cache_entry(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
+    if(_is_multi_config)
+        _ocio_add_cache_entry(CMAKE_CONFIGURATION_TYPES "${_build_types}")
+        # Debug and Release libraries are installed side by side and must not collide.
+        _ocio_add_cache_entry(CMAKE_DEBUG_POSTFIX "d")
+    else()
+        _ocio_add_cache_entry(CMAKE_BUILD_TYPE "${_build_types}")
+    endif()
+
+    set(_generator_args -G "${CMAKE_GENERATOR}")
+    if(CMAKE_GENERATOR_PLATFORM)
+        list(APPEND _generator_args -A "${CMAKE_GENERATOR_PLATFORM}")
+    endif()
+    if(CMAKE_GENERATOR_TOOLSET)
+        list(APPEND _generator_args -T "${CMAKE_GENERATOR_TOOLSET}")
+    endif()
+    if(CMAKE_GENERATOR_INSTANCE)
+        _ocio_add_cache_entry(CMAKE_GENERATOR_INSTANCE "${CMAKE_GENERATOR_INSTANCE}")
+    endif()
+    if(CMAKE_MAKE_PROGRAM)
+        _ocio_add_cache_entry(CMAKE_MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
+    endif()
+
+    ###############################################################################################
+    ### Skip the build if it is up to date ###
+
+    # Rebuild when the OCIO provided project changes too.
+    set(_project_hash "")
+    if(arg_PROJECT_DIR)
+        file(GLOB_RECURSE _project_files "${arg_PROJECT_DIR}/*")
+        foreach(_project_file ${_project_files})
+            file(SHA256 "${_project_file}" _project_file_hash)
+            string(APPEND _project_hash "${_project_file_hash}")
+        endforeach()
+    endif()
+
+    string(SHA256 _stamp_hash
+        "${_project_hash}|${arg_VERSION}|${arg_URL}|${arg_URL_HASH}|${arg_GIT_REPOSITORY}|${arg_GIT_TAG}|\
+${arg_SOURCE_SUBDIR}|${arg_PROJECT_DIR}|${arg_CMAKE_ARGS}|${OCIO_${dep_name}_SOURCE_DIR}|\
+${_generator_args}|${_cache_content}")
+
+    if(EXISTS "${_stamp_file}")
+        file(READ "${_stamp_file}" _previous_stamp_hash)
+        if(_previous_stamp_hash STREQUAL _stamp_hash)
+            if(OCIO_VERBOSE)
+                message(STATUS "${dep_name} ${arg_VERSION} is already built in ${OCIO_EXT_DIST_ROOT}")
+            endif()
+            return()
+        endif()
+        file(REMOVE "${_stamp_file}")
+    endif()
+
+    message(STATUS "Building ${dep_name} ${arg_VERSION} (logs in ${_root_dir})...")
+
+    # Start from a clean build directory, previous CMake cache might be stale.
+    file(REMOVE_RECURSE "${_build_dir}")
+    file(MAKE_DIRECTORY "${_build_dir}")
+    file(WRITE "${_init_cache}" "${_cache_content}")
+
+    ###############################################################################################
+    ### Download ###
+
+    if(NOT OCIO_${dep_name}_SOURCE_DIR)
+        file(REMOVE_RECURSE "${_src_dir}")
+
+        if(arg_URL)
+            get_filename_component(_archive_name "${arg_URL}" NAME)
+            set(_archive "${_root_dir}/download/${dep_name}-${_archive_name}")
+
+            if(arg_URL_HASH)
+                # <ALGO>=<value>, where <ALGO> is one of the file() hash commands (e.g. SHA256).
+                string(REPLACE "=" ";" _hash "${arg_URL_HASH}")
+                list(GET _hash 0 _hash_algo)
+                list(GET _hash 1 _hash_value)
+                string(TOLOWER "${_hash_value}" _hash_value)
+            else()
+                message(WARNING "No hash provided for ${arg_URL}, the download cannot be verified.")
+            endif()
+
+            # Retry to cope with transient network failures. The hash is verified separately, as
+            # file(DOWNLOAD EXPECTED_HASH) reports an error on a failed attempt.
+            set(_attempt 1)
+            while(TRUE)
+                file(DOWNLOAD "${arg_URL}" "${_archive}" STATUS _status TLS_VERIFY ON)
+                list(GET _status 0 _status_code)
+                list(GET _status 1 _status_message)
+
+                if(_status_code EQUAL 0 AND arg_URL_HASH)
+                    file(${_hash_algo} "${_archive}" _archive_hash)
+                    if(NOT _archive_hash STREQUAL _hash_value)
+                        set(_status_code 1)
+                        set(_status_message
+                            "${_hash_algo} mismatch, expected ${_hash_value}, got ${_archive_hash}")
+                    endif()
+                endif()
+
+                if(_status_code EQUAL 0)
+                    break()
+                endif()
+
+                file(REMOVE "${_archive}")
+                if(_attempt GREATER_EQUAL 3)
+                    message(FATAL_ERROR
+                        "Failed to download ${dep_name} from ${arg_URL}: ${_status_message}")
+                endif()
+
+                message(STATUS "Failed to download ${dep_name} (${_status_message}), retrying...")
+                execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 5)
+                math(EXPR _attempt "${_attempt} + 1")
+            endwhile()
+
+            # Extract in a temporary directory, then move the archive root folder into place.
+            set(_extract_dir "${_root_dir}/extract")
+            file(REMOVE_RECURSE "${_extract_dir}")
+            file(MAKE_DIRECTORY "${_extract_dir}")
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E tar xf "${_archive}"
+                WORKING_DIRECTORY "${_extract_dir}"
+                RESULT_VARIABLE _result)
+            if(NOT _result EQUAL 0)
+                message(FATAL_ERROR "Failed to extract ${_archive}")
+            endif()
+
+            file(GLOB _extracted LIST_DIRECTORIES true "${_extract_dir}/*")
+            list(LENGTH _extracted _extracted_count)
+            if(_extracted_count EQUAL 1 AND IS_DIRECTORY "${_extracted}")
+                file(RENAME "${_extracted}" "${_src_dir}")
+                file(REMOVE_RECURSE "${_extract_dir}")
+            else()
+                file(RENAME "${_extract_dir}" "${_src_dir}")
+            endif()
+        else()
+            find_package(Git REQUIRED QUIET)
+            execute_process(
+                COMMAND "${GIT_EXECUTABLE}" -c advice.detachedHead=false
+                        clone --depth 1 --branch "${arg_GIT_TAG}" "${arg_GIT_REPOSITORY}" "${_src_dir}"
+                OUTPUT_FILE "${_root_dir}/${dep_name}-download.log"
+                ERROR_FILE "${_root_dir}/${dep_name}-download.log"
+                RESULT_VARIABLE _result)
+            if(NOT _result EQUAL 0)
+                message(FATAL_ERROR "Failed to clone ${arg_GIT_REPOSITORY} (${arg_GIT_TAG}), "
+                                    "see ${_root_dir}/${dep_name}-download.log")
+            endif()
+        endif()
+    endif()
+
+    set(_cmake_src_dir "${_src_dir}")
+    if(arg_SOURCE_SUBDIR)
+        set(_cmake_src_dir "${_src_dir}/${arg_SOURCE_SUBDIR}")
+    endif()
+
+    set(_project_args "")
+    if(arg_PROJECT_DIR)
+        set(_project_args
+            -DOCIO_DEP_SOURCE_DIR=${_cmake_src_dir}
+            -DOCIO_DEP_VERSION=${arg_VERSION})
+        set(_cmake_src_dir "${arg_PROJECT_DIR}")
+    endif()
+
+    ###############################################################################################
+    ### Configure, build and install ###
+
+    macro (_ocio_run_step step_name)
+        set(_log "${_root_dir}/${dep_name}-${step_name}.log")
+        execute_process(
+            COMMAND ${ARGN}
+            OUTPUT_FILE "${_log}"
+            ERROR_FILE "${_log}"
+            RESULT_VARIABLE _result)
+        if(NOT _result EQUAL 0)
+            file(STRINGS "${_log}" _log_lines)
+            list(LENGTH _log_lines _log_lines_count)
+            if(_log_lines_count GREATER 40)
+                math(EXPR _log_first "${_log_lines_count} - 40")
+                list(SUBLIST _log_lines ${_log_first} 40 _log_lines)
+            endif()
+            string(REPLACE ";" "\n" _log_tail "${_log_lines}")
+            message(FATAL_ERROR "${_log_tail}\n"
+                                "Failed to ${step_name} ${dep_name} ${arg_VERSION}, see ${_log}")
+        endif()
+    endmacro()
+
+    _ocio_run_step(configure
+        ${CMAKE_COMMAND}
+            ${_generator_args}
+            -C "${_init_cache}"
+            ${_project_args}
+            ${arg_CMAKE_ARGS}
+            -S "${_cmake_src_dir}"
+            -B "${_build_dir}")
+
+    set(_installed_libraries "")
+    foreach(_build_type ${_build_types})
+        _ocio_run_step(build-${_build_type}
+            ${CMAKE_COMMAND}
+                --build "${_build_dir}"
+                --config ${_build_type}
+                --target install
+                --parallel)
+
+        # Make sure that the libraries of the different configurations don't overwrite each other.
+        # Note that a single configuration can list the same file several times (e.g. OpenEXR
+        # installing the OpenJPH library it builds).
+        file(STRINGS "${_build_dir}/install_manifest.txt" _manifest)
+        set(_config_libraries "")
+        foreach(_file ${_manifest})
+            if(_file MATCHES "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$")
+                if(_file IN_LIST _installed_libraries)
+                    message(FATAL_ERROR
+                        "Several configurations of ${dep_name} install ${_file}, "
+                        "a Debug postfix must be configured for ${dep_name}.")
+                endif()
+                list(APPEND _config_libraries "${_file}")
+            endif()
+        endforeach()
+        list(APPEND _installed_libraries ${_config_libraries})
+    endforeach()
+
+    file(WRITE "${_stamp_file}" "${_stamp_hash}")
+endfunction()
+
+###################################################################################################
+# ocio_find_built_dependency locates a dependency previously built by ocio_build_dependency,
+# using the CMake configuration files it installed in ${OCIO_EXT_DIST_ROOT}.
+#
+# Argument:
+#   dep_name is the name of the dependency (package). Please note that dep_name is case sensitive.
+#
+# Any extra argument is forwarded to find_package (e.g. COMPONENTS).
+#
+# This is a macro because the variables and imported targets created by find_package must be
+# visible in the caller scope.
+###################################################################################################
+macro (ocio_find_built_dependency dep_name)
+    # OCIO only builds the Release and Debug configurations with multi-config generators, so
+    # map the other configurations to Release.
+    foreach(_ocio_cfg MINSIZEREL RELWITHDEBINFO)
+        set(_ocio_previous_map_${_ocio_cfg} "${CMAKE_MAP_IMPORTED_CONFIG_${_ocio_cfg}}")
+        if(NOT CMAKE_MAP_IMPORTED_CONFIG_${_ocio_cfg})
+            set(CMAKE_MAP_IMPORTED_CONFIG_${_ocio_cfg} "${_ocio_cfg};RELEASE;")
+        endif()
+    endforeach()
+
+    # Ignore any previous result that might point elsewhere.
+    unset(${dep_name}_DIR CACHE)
+
+    find_package(${dep_name} ${ARGN}
+        CONFIG
+        REQUIRED
+        PATHS "${OCIO_EXT_DIST_ROOT}"
+        NO_DEFAULT_PATH)
+
+    foreach(_ocio_cfg MINSIZEREL RELWITHDEBINFO)
+        set(CMAKE_MAP_IMPORTED_CONFIG_${_ocio_cfg} "${_ocio_previous_map_${_ocio_cfg}}")
+        unset(_ocio_previous_map_${_ocio_cfg})
+    endforeach()
+endmacro()

@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright Contributors to the OpenColorIO Project.
 
+include(ocio_build_dependency)
+
 ###################################################################################################
-# ocio_install_dependency installs a dependency by calling the corresponding Install module.
-# e.g. Install<dep_name>.cmake
+# ocio_install_dependency installs a dependency by calling the corresponding build recipe
+# i.e. share/cmake/deps/<dep_name>.cmake, or the legacy Install<dep_name>.cmake module when the
+# dependency has no recipe yet.
 #
 # Argument:
 #   dep_name is the name of the dependency (package). Please note that dep_name is case sensitive.
@@ -27,7 +30,13 @@ macro (ocio_install_dependency dep_name)
 
     if(NOT ${dep_name}_FOUND AND OCIO_INSTALL_EXT_PACKAGES AND NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL NONE)
         set(OCIO_${dep_name}_RECOMMENDED_VERSION ${ocio_id_VERSION})
-        include(Install${dep_name})
+        if(EXISTS "${OCIO_DEPS_RECIPES_DIR}/${dep_name}.cmake")
+            # Build the dependency at configure time and locate its CMake configuration files.
+            include("${OCIO_DEPS_RECIPES_DIR}/${dep_name}.cmake")
+        else()
+            # Legacy path, creating the imported targets by hand around an ExternalProject.
+            include(Install${dep_name})
+        endif()
         set(_${dep_name}_built_by_ocio TRUE)
     endif()
 
