@@ -112,7 +112,12 @@ set(SOURCES
 	PyViewTransform.cpp
 )
 
-# Reason not to use pybind11_add_module ?
+# pybind11_add_module() is not used because:
+# - It is only available when pybind11 is found through its CMake configuration files, while
+#   Findpybind11.cmake also supports pybind11 found as headers only.
+# - Its defaults would change the module: name with the Python extension suffix (e.g.
+#   PyOpenColorIO.cpython-312-darwin.so), link time optimization in release builds, and
+#   stripping, which ocio_strip_binary() already does.
 # https://pybind11.readthedocs.io/en/stable/compiling.html#pybind11-add-module
 add_library(PyOpenColorIO MODULE ${SOURCES})
 
@@ -142,6 +147,13 @@ if(USE_GCC OR USE_CLANG)
     set(CUSTOM_COMPILE_FLAGS "${CUSTOM_COMPILE_FLAGS};-Wno-deprecated-declarations")
 elseif(USE_MSVC)
     set(CUSTOM_COMPILE_FLAGS "${CUSTOM_COMPILE_FLAGS};/wd4996")
+endif()
+
+# /bigobj is needed for bigger binding projects due to the limit to 64k addressable sections.
+# pybind11 only adds it through pybind11_add_module() (pybind11::windows_extras), which is not
+# used here.
+if(MSVC)
+    set(CUSTOM_COMPILE_FLAGS "${CUSTOM_COMPILE_FLAGS};/bigobj")
 endif()
 
 # OSX demands that the linker resolve all symbols at build time
