@@ -74,7 +74,17 @@ function (ocio_build_dependency dep_name)
 
     get_property(_is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
     if(_is_multi_config)
-        set(_build_types Release Debug)
+        # Only build the Release and Debug configurations used by OCIO, the other ones are
+        # mapped to Release when importing the dependencies (see ocio_find_built_dependency).
+        set(_build_types "")
+        foreach(_build_type Release Debug)
+            if(_build_type IN_LIST CMAKE_CONFIGURATION_TYPES)
+                list(APPEND _build_types ${_build_type})
+            endif()
+        endforeach()
+        if(NOT _build_types)
+            set(_build_types Release)
+        endif()
     elseif(CMAKE_BUILD_TYPE)
         set(_build_types ${CMAKE_BUILD_TYPE})
     else()

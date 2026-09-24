@@ -146,6 +146,8 @@ class CMakeBuild(build_ext):
                 cmake_args += [
                     "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir),
                     "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), bindir),
+                    # Only the requested configuration of the dependencies is needed.
+                    "-DCMAKE_CONFIGURATION_TYPES={}".format(cfg),
                 ]
                 build_args += ["--config", cfg]
 
