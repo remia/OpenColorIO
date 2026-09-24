@@ -14,24 +14,27 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 
 
-# Extract the project version from CMake generated ABI header.
+# Extract the project version from the top level CMakeLists.txt, the same way CMake builds
+# OCIO_VERSION_FULL_STR in OpenColorABI.h. Running a CMake configuration instead would build the
+# missing dependencies at configure time.
 def get_version():
     VERSION_REGEX = re.compile(
-        r"^\s*#\s*define\s+OCIO_VERSION_FULL_STR\s+\"(.*)\"\s*$", re.MULTILINE)
+        r"^\s*project\(\s*OpenColorIO\s+VERSION\s+([0-9.]+)\s", re.MULTILINE)
+    RELEASE_TYPE_REGEX = re.compile(
+        r"^\s*set\(\s*OpenColorIO_VERSION_RELEASE_TYPE\s+\"(.*)\"\s*\)", re.MULTILINE)
 
     here = os.path.abspath(os.path.dirname(__file__))
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        try:
-            subprocess.check_call(["cmake", here], cwd=tmpdir)
-            path = os.path.join(tmpdir, "include", "OpenColorIO", "OpenColorABI.h")
-            with open(path) as f:
-                match = VERSION_REGEX.search(f.read())
-                return match.group(1)
-        except Exception as e:
-            raise RuntimeError(
-                "Unable to find OpenColorIO version: {}".format(str(e))
-            )
+    try:
+        with open(os.path.join(here, "CMakeLists.txt")) as f:
+            content = f.read()
+        version = VERSION_REGEX.search(content).group(1)
+        release_type = RELEASE_TYPE_REGEX.search(content).group(1)
+        return version + release_type
+    except Exception as e:
+        raise RuntimeError(
+            "Unable to find OpenColorIO version: {}".format(str(e))
+        )
 
 
 # Call CMake find_package from a dummy script and return whether the package
