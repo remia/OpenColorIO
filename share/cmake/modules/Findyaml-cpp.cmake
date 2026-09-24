@@ -148,12 +148,4 @@ if (yaml-cpp_FOUND AND NOT TARGET yaml-cpp::yaml-cpp)
         IMPORTED_LOCATION ${yaml-cpp_LIBRARY}
         INTERFACE_INCLUDE_DIRECTORIES ${yaml-cpp_INCLUDE_DIR}
     )
-
-    # Required because Installyaml-cpp.cmake creates `yaml-cpp::yaml-cpp`
-    # as an alias, and aliases get resolved in exported targets, causing the
-    # find_dependency(yaml-cpp) call in OpenColorIOConfig.cmake to fail.
-    # This can be removed once Installyaml-cpp.cmake targets yaml-cpp 0.8.
-    if (NOT TARGET yaml-cpp)
-        add_library(yaml-cpp ALIAS yaml-cpp::yaml-cpp)
-    endif ()
 endif ()
