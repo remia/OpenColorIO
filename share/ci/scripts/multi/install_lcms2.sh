@@ -17,15 +17,13 @@ else
     git checkout tags/lcms${LCMS2_VERSION} -b lcms${LCMS2_VERSION}
 fi
 
-cp ../share/cmake/projects/Buildlcms2.cmake CMakeLists.txt
-
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release \
       ${INSTALL_TARGET:+"-DCMAKE_INSTALL_PREFIX="${INSTALL_TARGET}""} \
-      -DBUILD_SHARED_LIBS=ON \
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-      ../.
+      -DOCIO_DEP_SOURCE_DIR="$(pwd)/.." \
+      ../../share/cmake/projects/lcms2
 cmake --build . \
       --target install \
       --config Release \

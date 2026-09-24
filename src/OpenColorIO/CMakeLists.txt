@@ -399,35 +399,23 @@ if(UNIX AND NOT APPLE)
     # dependencies.
     set(CUSTOM_LINK_FLAGS "${CUSTOM_LINK_FLAGS};-Wl,--exclude-libs,ALL")
 elseif(APPLE)
-    if (expat_LIBRARY)
-        get_filename_component(_expat_LIBDIR "${expat_LIBRARY}" DIRECTORY)
-        # Add the path to CMake list of search paths for libraries.
-        list(APPEND _OCIO_LINK_FLAGS_LIST_ "-Wl,-L${_expat_LIBDIR}")
-        # Hide the expat symbols.
-        list(APPEND _OCIO_LINK_FLAGS_LIST_ "-Wl,-hidden-lexpat")
-    endif()
+    # Hide the symbols of the static dependencies exporting symbols with default visibility
+    # (i.e. ignoring the hidden visibility preset), by loading their exact archive file with
+    # hidden visibility. Shared dependencies are left untouched.
+    foreach(_dep_target expat::expat MINIZIP::minizip-ng)
+        get_target_property(_dep_type ${_dep_target} TYPE)
+        if(_dep_type STREQUAL "UNKNOWN_LIBRARY")
+            # Imported targets created by find modules, check the library file itself.
+            get_target_property(_dep_location ${_dep_target} LOCATION)
+            if(_dep_location MATCHES "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$")
+                set(_dep_type "STATIC_LIBRARY")
+            endif()
+        endif()
 
-
-    # Check for minizip first since our Findminizip module sets minizip-ng_LIBRARY.
-    if (minizip_LIBRARY OR minizip-ng_COMPAT)
-        get_filename_component(_minizip-ng_LIBDIR "${minizip_LIBRARY}" DIRECTORY)
-        set(_minizip-ng_NAME "minizip")
-    elseif(minizip-ng_LIBRARY)
-        get_filename_component(_minizip-ng_LIBDIR "${minizip-ng_LIBRARY}" DIRECTORY)
-        set(_minizip-ng_NAME "minizip-ng")
-    endif()
-
-    if (_minizip-ng_LIBDIR)
-        # Add the path to CMake list of search paths for libraries.
-        list(APPEND _OCIO_LINK_FLAGS_LIST_ "-Wl,-L${_minizip-ng_LIBDIR}")
-        # Hide the minizip-ng symbols.
-        list(APPEND _OCIO_LINK_FLAGS_LIST_ "-Wl,-hidden-l${_minizip-ng_NAME}")
-    endif()
-
-    if (_OCIO_LINK_FLAGS_LIST_)
-        list(JOIN _OCIO_LINK_FLAGS_LIST_ ";" _OCIO_LINK_FLAGS_LIST_)
-        set(CUSTOM_LINK_FLAGS "${CUSTOM_LINK_FLAGS};${_OCIO_LINK_FLAGS_LIST_}")
-    endif()
+        if(_dep_type STREQUAL "STATIC_LIBRARY")
+            list(APPEND CUSTOM_LINK_FLAGS "-Wl,-load_hidden,$<TARGET_LINKER_FILE:${_dep_target}>")
+        endif()
+    endforeach()
 endif()
 
 if (OCIO_USE_SOVERSION)
