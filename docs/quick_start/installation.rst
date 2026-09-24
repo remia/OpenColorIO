@@ -167,12 +167,18 @@ this script on Windows.
 Automated Installation
 ++++++++++++++++++++++
 
-Dependencies listed above with a preceeding * can be automatically installed at 
-build time using the ``OCIO_INSTALL_EXT_PACKAGES`` option in your ``cmake`` 
-command (requires an internet connection).  The C/C++ libraries are pulled from 
-external repositories, built, and are (typically) statically-linked into an OCIO
-dynamic library.  All installs of these components are fully contained within your 
-build directory.
+Dependencies listed above with a preceeding * can be automatically installed at
+configure time using the ``OCIO_INSTALL_EXT_PACKAGES`` option in your ``cmake``
+command (requires an internet connection).  The C/C++ libraries are downloaded from
+their official releases, built, and are (typically) statically-linked into an OCIO
+dynamic library.  All installs of these components are fully contained within your
+build directory: they are installed in ``<build>/ext/dist``, along with the CMake
+configuration files of each package, and are then located with ``find_package``.
+Subsequent CMake runs reuse them unless their build settings change.
+
+To build a dependency from local sources instead of downloading it (e.g. on a
+machine without internet access), set ``OCIO_<package>_SOURCE_DIR`` to the
+location of the extracted sources, e.g. ``-DOCIO_yaml-cpp_SOURCE_DIR=<path>``.
 
 Three ``OCIO_INSTALL_EXT_PACKAGES`` options are available::
 
